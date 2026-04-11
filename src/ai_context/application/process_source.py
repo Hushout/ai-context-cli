@@ -1,9 +1,10 @@
-"""ProcessSource use case — orchestrates fetch → extract → stub output."""
+"""ProcessSource use case — orchestrates fetch → extract → Markdown output."""
 
 from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -25,27 +26,33 @@ class ProcessSourceCommand:
 class ProcessSourceUseCase:
     """Coordinates the processing pipeline using injected ports."""
 
-    def __init__(self, fetcher: ContentFetcher, extractor: ContentExtractor) -> None:
+    def __init__(
+        self,
+        fetcher: ContentFetcher,
+        extractor: ContentExtractor,
+        html_to_markdown: Callable[[str], str],
+    ) -> None:
         self._fetcher = fetcher
         self._extractor = extractor
+        self._html_to_markdown = html_to_markdown
 
     def execute(self, cmd: ProcessSourceCommand) -> ProcessedContent:
         started = time.perf_counter()
         logger.info("Fetching source: %s", cmd.source)
         raw = self._fetcher.fetch(cmd.source)
 
-        logger.info("Extracting readable content (stub)")
-        extracted_html = self._extractor.extract(raw)
-        plain = html_to_plain_text_stub(extracted_html)
+        logger.info("Extracting readable content")
+        extraction = self._extractor.extract(raw)
+        title = extraction.title.strip() or "Untitled document"
+        body_md = self._html_to_markdown(extraction.cleaned_html).strip()
+        markdown = f"# {title}\n\n{body_md}" if body_md else f"# {title}\n"
 
-        title = "Stub document"
-        markdown_lines = [f"# {title}", "", plain]
-        markdown = "\n".join(markdown_lines)
+        plain = html_to_plain_text_stub(extraction.cleaned_html)
 
         summary: str | None = None
         if cmd.include_summary:
             summary = first_three_sentences(plain)
-            logger.info("Stub extractive summary enabled (first three sentences)")
+            logger.info("Extractive summary enabled (first three sentences)")
 
         words = plain.split()
         word_count = len(words)

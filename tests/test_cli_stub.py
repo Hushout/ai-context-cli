@@ -1,4 +1,4 @@
-"""CLI integration tests (stub pipeline, no network)."""
+"""CLI integration tests (stubs swapped in — no real network)."""
 
 from __future__ import annotations
 
@@ -6,6 +6,9 @@ import sys
 
 import pytest
 
+from ai_context.infrastructure.extractors import StubContentExtractor
+from ai_context.infrastructure.fetchers import StubContentFetcher
+from ai_context.interfaces import cli as cli_module
 from ai_context.interfaces.cli import run_app
 
 
@@ -27,6 +30,14 @@ def test_cli_rejects_malformed_url_exit_code_2(monkeypatch: pytest.MonkeyPatch) 
     assert exc.value.code == 2
 
 
+@pytest.fixture(autouse=True)
+def _cli_uses_stub_adapters(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep CLI tests deterministic (no outbound HTTP)."""
+
+    monkeypatch.setattr(cli_module, "HttpContentFetcher", StubContentFetcher)
+    monkeypatch.setattr(cli_module, "ReadabilityExtractor", StubContentExtractor)
+
+
 def test_cli_stub_pipeline_stdout(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -40,7 +51,7 @@ def test_cli_stub_pipeline_stdout(
     assert "Summary" not in out
 
 
-def test_cli_summary_flag_includes_stub_summary(
+def test_cli_summary_flag_includes_extractive_summary(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(
@@ -52,7 +63,7 @@ def test_cli_summary_flag_includes_stub_summary(
         run_app()
     assert exc.value.code == 0
     out = capsys.readouterr().out
-    assert "## Summary (stub)" in out
-    _body, summary_block = out.split("## Summary (stub)", maxsplit=1)
+    assert "## Extractive summary" in out
+    _body, summary_block = out.split("## Extractive summary", maxsplit=1)
     assert "Fourth stub sentence" in _body  # full stub body still lists all sentences
     assert "Fourth stub sentence" not in summary_block

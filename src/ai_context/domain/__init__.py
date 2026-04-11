@@ -11,6 +11,7 @@ from .exceptions import (
 from .models import (
     ContentMeta,
     ContentStructure,
+    ExtractedContent,
     ProcessedContent,
     RawContent,
     Section,
@@ -19,6 +20,7 @@ from .ports import ContentExtractor, ContentFetcher, OutputFormatter, Summarizer
 
 __all__ = [
     # models
+    "ExtractedContent",
     "RawContent",
     "Section",
     "ContentStructure",

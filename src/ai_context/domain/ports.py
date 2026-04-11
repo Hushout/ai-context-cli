@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from .models import ProcessedContent, RawContent
+from .models import ExtractedContent, ProcessedContent, RawContent
 
 
 class ContentFetcher(ABC):
@@ -41,20 +41,20 @@ class ContentExtractor(ABC):
     """Extract the readable body from raw content.
 
     Strips navigation, ads, sidebars, and other boilerplate.
-    Returns clean HTML ready for Markdown conversion.
+    Returns a title plus clean HTML ready for Markdown conversion.
 
     Implementations: ReadabilityExtractor.
     """
 
     @abstractmethod
-    def extract(self, raw: RawContent) -> str:
-        """Extract the main article body from *raw* content.
+    def extract(self, raw: RawContent) -> ExtractedContent:
+        """Extract the main article from *raw* content.
 
         Args:
             raw: A :class:`~ai_context.domain.models.RawContent` instance.
 
         Returns:
-            A clean HTML string containing only the main content.
+            :class:`~ai_context.domain.models.ExtractedContent` with title and article HTML.
 
         Raises:
             ~ai_context.domain.exceptions.ParseError: If no readable content is found.
