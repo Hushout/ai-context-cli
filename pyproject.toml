@@ -90,3 +90,7 @@ known-first-party = ["ai_context"]
 python_version = "3.11"
 strict = true
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["readability", "markdownify"]
+ignore_missing_imports = true

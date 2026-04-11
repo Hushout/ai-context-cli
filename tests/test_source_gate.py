@@ -25,7 +25,10 @@ def test_rejects_non_http_scheme() -> None:
 
 
 def test_accepts_https_url() -> None:
-    assert validate_http_url_command_source("  https://example.com/path  ") == "https://example.com/path"
+    assert (
+        validate_http_url_command_source("  https://example.com/path  ")
+        == "https://example.com/path"
+    )
 
 
 def test_invalid_http_url_raises_parse_error() -> None:

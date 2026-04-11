@@ -13,8 +13,9 @@ from rich.logging import RichHandler
 from ai_context.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
 from ai_context.application.source_gate import validate_http_url_command_source
 from ai_context.domain.exceptions import AiContextError
-from ai_context.infrastructure.extractors import StubContentExtractor
-from ai_context.infrastructure.fetchers import StubContentFetcher
+from ai_context.infrastructure.extractors import ReadabilityExtractor
+from ai_context.infrastructure.fetchers import HttpContentFetcher
+from ai_context.infrastructure.processors.markdown_converter import html_fragment_to_markdown
 
 _err = Console(stderr=True, highlight=False)
 
@@ -46,19 +47,19 @@ def _render_stdout(markdown: str, summary: str | None) -> None:
 
     sys.stdout.write(markdown)
     if summary is not None:
-        sys.stdout.write("\n\n---\n\n## Summary (stub)\n\n")
+        sys.stdout.write("\n\n---\n\n## Extractive summary\n\n")
         sys.stdout.write(summary)
         sys.stdout.write("\n")
     sys.stdout.flush()
 
 
 def main(
-    source: Annotated[str, typer.Argument(help="HTTP(S) URL to process (stub pipeline).")],
+    source: Annotated[str, typer.Argument(help="HTTP(S) URL to fetch and convert to Markdown.")],
     summary: Annotated[
         bool,
         typer.Option(
             "--summary/--no-summary",
-            help="Attach a minimal extractive summary (first three stub sentences).",
+            help="Attach a minimal extractive summary (first three sentences of plain text).",
         ),
     ] = False,
     verbose: Annotated[
@@ -66,7 +67,7 @@ def main(
         typer.Option("--verbose", "-v", help="Log pipeline steps to stderr."),
     ] = False,
 ) -> None:
-    """Transform a URL through the stub fetch/extract pipeline (foundation / HUX-5)."""
+    """Transform an HTTP(S) URL through fetch → Readability → Markdown (HUX-6)."""
 
     if verbose:
         _configure_verbose_logging()
@@ -77,8 +78,9 @@ def main(
         _handle_domain_error(exc)
 
     use_case = ProcessSourceUseCase(
-        fetcher=StubContentFetcher(),
-        extractor=StubContentExtractor(),
+        fetcher=HttpContentFetcher(),
+        extractor=ReadabilityExtractor(),
+        html_to_markdown=html_fragment_to_markdown,
     )
     command = ProcessSourceCommand(source=normalized, include_summary=summary)
 

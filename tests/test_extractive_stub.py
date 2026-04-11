@@ -11,10 +11,7 @@ def test_html_to_plain_text_stub_strips_tags() -> None:
 
 
 def test_first_three_sentences_truncates() -> None:
-    text = (
-        "First sentence here. Second sentence! Third one? "
-        "Fourth should be dropped. Fifth too."
-    )
+    text = "First sentence here. Second sentence! Third one? Fourth should be dropped. Fifth too."
     got = first_three_sentences(text)
     assert "Fourth" not in got
     assert got.startswith("First sentence here.")

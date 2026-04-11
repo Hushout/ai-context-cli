@@ -25,6 +25,17 @@ NonNegativeInt = Annotated[int, Field(ge=0)]
 # ---------------------------------------------------------------------------
 
 
+class ExtractedContent(BaseModel):
+    """Result of article extraction: display title and HTML body without chrome."""
+
+    model_config = ConfigDict(frozen=True)
+
+    title: str = Field(description="Human-readable document title (may be empty)")
+    cleaned_html: str = Field(
+        description="Main article HTML only, suitable for Markdown conversion",
+    )
+
+
 class RawContent(BaseModel):
     """Raw content returned by a ContentFetcher before any processing."""
 
