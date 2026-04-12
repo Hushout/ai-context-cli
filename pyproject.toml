@@ -22,6 +22,8 @@ dependencies = [
     "readability-lxml>=0.8",
     "markdownify>=0.12",
     "pyyaml>=6.0",
+    "litellm>=1.40",
+    "python-dotenv>=1.0",
 ]
 
 [project.scripts]
@@ -92,5 +94,5 @@ strict = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["readability", "markdownify"]
+module = ["readability", "markdownify", "litellm"]
 ignore_missing_imports = true

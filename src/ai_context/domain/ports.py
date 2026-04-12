@@ -65,7 +65,8 @@ class ContentExtractor(ABC):
 class Summarizer(ABC):
     """Produce a concise summary of the given text.
 
-    Implementations: ExtractiveSummarizer (v1), LlmSummarizer (v1.1+).
+    Concrete adapters live in ``infrastructure.summarizers`` (extractive stub for tests,
+    LiteLLM-backed summarizer with lazy ``litellm`` import for production).
     """
 
     @abstractmethod

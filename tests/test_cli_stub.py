@@ -6,8 +6,10 @@ import sys
 
 import pytest
 
+from ai_context.domain.ports import Summarizer
 from ai_context.infrastructure.extractors import StubContentExtractor
 from ai_context.infrastructure.fetchers import StubContentFetcher
+from ai_context.infrastructure.summarizers import ExtractiveSummarizer
 from ai_context.interfaces import cli as cli_module
 from ai_context.interfaces.cli import run_app
 
@@ -32,10 +34,16 @@ def test_cli_rejects_malformed_url_exit_code_2(monkeypatch: pytest.MonkeyPatch) 
 
 @pytest.fixture(autouse=True)
 def _cli_uses_stub_adapters(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep CLI tests deterministic (no outbound HTTP)."""
+    """Keep CLI tests deterministic (no outbound HTTP or LLM)."""
 
     monkeypatch.setattr(cli_module, "HttpContentFetcher", StubContentFetcher)
     monkeypatch.setattr(cli_module, "ReadabilityExtractor", StubContentExtractor)
+
+    def _stub_summarizer(_model: str) -> Summarizer:
+        return ExtractiveSummarizer()
+
+    monkeypatch.setattr(cli_module, "_build_summarizer_for_cli", _stub_summarizer)
+    monkeypatch.setattr(cli_module, "_maybe_load_dotenv_for_summary", lambda: None)
 
 
 def test_cli_stub_pipeline_stdout(
@@ -51,7 +59,7 @@ def test_cli_stub_pipeline_stdout(
     assert "Summary" not in out
 
 
-def test_cli_summary_flag_includes_extractive_summary(
+def test_cli_summary_flag_includes_summary_block(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(
@@ -63,7 +71,7 @@ def test_cli_summary_flag_includes_extractive_summary(
         run_app()
     assert exc.value.code == 0
     out = capsys.readouterr().out
-    assert "## Extractive summary" in out
-    _body, summary_block = out.split("## Extractive summary", maxsplit=1)
+    assert "## Summary" in out
+    _body, summary_block = out.split("## Summary", maxsplit=1)
     assert "Fourth stub sentence" in _body  # full stub body still lists all sentences
     assert "Fourth stub sentence" not in summary_block

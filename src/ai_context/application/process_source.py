@@ -8,9 +8,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from ai_context.application.extractive_stub import first_three_sentences, html_to_plain_text_stub
+from ai_context.domain.exceptions import SummarizerConfigurationError
 from ai_context.domain.models import ContentMeta, ProcessedContent
-from ai_context.domain.ports import ContentExtractor, ContentFetcher
+from ai_context.domain.ports import ContentExtractor, ContentFetcher, Summarizer
+from ai_context.utils.plain_text import html_to_plain_text_stub
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +32,12 @@ class ProcessSourceUseCase:
         fetcher: ContentFetcher,
         extractor: ContentExtractor,
         html_to_markdown: Callable[[str], str],
+        summarizer: Summarizer | None = None,
     ) -> None:
         self._fetcher = fetcher
         self._extractor = extractor
         self._html_to_markdown = html_to_markdown
+        self._summarizer = summarizer
 
     def execute(self, cmd: ProcessSourceCommand) -> ProcessedContent:
         started = time.perf_counter()
@@ -51,8 +54,12 @@ class ProcessSourceUseCase:
 
         summary: str | None = None
         if cmd.include_summary:
-            summary = first_three_sentences(plain)
-            logger.info("Extractive summary enabled (first three sentences)")
+            if self._summarizer is None:
+                raise SummarizerConfigurationError(
+                    "A Summarizer instance is required when include_summary is true.",
+                )
+            summary = self._summarizer.summarize(plain)
+            logger.info("Summary enabled (injected Summarizer)")
 
         words = plain.split()
         word_count = len(words)
