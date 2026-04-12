@@ -70,7 +70,7 @@ ai-context [OPTIONS] SOURCE
 | `--url` | — | — | **Pas de flag `--url` en ligne de commande.** L’URL est passée comme argument positionnel `SOURCE` (ex. `ai-context "https://…"`). Capacité « URL en entrée » : **Implemented** via `SOURCE`. | **Implemented** |
 | `SOURCE` | `str` | *requis* | URL HTTP(S) à récupérer et convertir en Markdown (argument positionnel Typer). | **Implemented** |
 | `--summary` / `--no-summary` | `bool` | `False` | Ajouter un résumé **LLM** (LiteLLM). Défaut du modèle : `gpt-4o-mini` (OpenAI) si `--model` est omis. | **Implemented** |
-| `--model` | `str` | *défaut OpenAI* | Identifiant LiteLLM (`gpt-4o-mini`, `anthropic/claude-3-5-sonnet-latest`, `ollama/llama3`, …). | **Implemented** |
+| `--model` | `str` | *défaut OpenAI* | Identifiant LiteLLM (`gpt-4o-mini`, `anthropic/claude-3-5-sonnet-latest`, `openrouter/...`, `ollama/llama3`, …). | **Implemented** |
 | `--verbose`, `-v` | `bool` | `False` | Journaliser les étapes du pipeline sur stderr (Rich). | **Implemented** |
 | `--output`, `-o` | `Path` | stdout | Chemin de sortie | **Planned v1.x** |
 | `--format`, `-f` | `markdown\|json\|yaml\|all` | `markdown` | Format de sortie | **Planned v1.x** |
@@ -265,22 +265,22 @@ Implémentations concrètes des ports.
 CLI Typer. Responsabilité unique : parser les arguments, construire le use case avec les bons adaptateurs, afficher le résultat.
 
 ```python
-# interfaces/cli.py
+# interfaces/cli.py (v1 actuelle — schéma simplifié)
 
 import typer
-app = typer.Typer()
 
-@app.command()
 def main(
-    source: str = typer.Argument(..., help="URL ou chemin de fichier"),
-    output: Path | None = typer.Option(None, "--output", "-o"),
-    format: FormatChoice = typer.Option(FormatChoice.markdown, "--format", "-f"),
+    source: str = typer.Argument(..., help="URL HTTP(S)"),
     summary: bool = typer.Option(False, "--summary/--no-summary"),
-    structure: bool = typer.Option(False, "--structure/--no-structure"),
-    max_tokens: int | None = typer.Option(None, "--max-tokens"),
+    model: str | None = typer.Option(None, "--model"),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None: ...
+
+def run_app() -> None:
+    typer.run(main)  # script d’entrée paquet : ai_context.interfaces.cli:run_app
 ```
+
+Les options `--output`, `--format`, `--structure`, `--max-tokens` restent **Planned v1.x** (voir tableau §5).
 
 ---
 
@@ -435,7 +435,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ai-context = "ai_context.interfaces.cli:app"
+ai-context = "ai_context.interfaces.cli:run_app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

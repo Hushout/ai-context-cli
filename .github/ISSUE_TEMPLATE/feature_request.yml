@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [SPEC.md](https://github.com/Hushout/ai-context/blob/main/SPEC.md) for roadmap and non-goals before proposing large scope.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What user or developer pain does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Sketch API, CLI flags, or architecture notes.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: I am willing to open a PR for this
+          required: false

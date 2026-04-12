@@ -1,132 +1,80 @@
 # ai-context
 
-CLI Python qui transforme une URL (ou, plus tard, un fichier) en Markdown propre, résumé et structure lisible par des modèles. Voir [SPEC.md](SPEC.md) pour l’architecture cible (DDD léger).
+**HTTP(S) → clean Markdown** for LLM context: `httpx` fetch → Readability → `markdownify`; optional **LiteLLM** summary with `--summary` (lazy-loaded — no LLM stack until you opt in).
 
-**État actuel (fondation / stub)** : le pipeline `fetch → extract` est branché avec des adaptateurs factices ; seules les **URLs HTTP(S)** sont acceptées. Aucun appel réseau réel pour l’instant.
+```bash
+# Markdown only (stdout stays pipe-clean; errors → stderr)
+ai-context "https://example.com/article"
 
-## Prérequis
+# Same + LLM summary (loads .env from cwd for API keys)
+ai-context "https://example.com/article" --summary
 
-- **Python 3.11+**
-- Git
-
-## Installation (parcours standard)
-
-À la racine du dépôt :
-
-### Windows (PowerShell)
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -U pip
-pip install -e ".[dev]"
+# Verbose pipeline logs on stderr
+ai-context "https://example.com/article" --summary -v
 ```
 
-### macOS / Linux
+Architecture and conventions: [SPEC.md](SPEC.md).
+
+## ⚡ Why
+
+Raw HTML wastes tokens. `ai-context` is a small preprocessing step: one URL in, readable Markdown (and optionally a short summary) out.
+
+## 🧩 What you get
+
+- **Readability**-based main content extraction (`readability-lxml`)
+- **Markdown** via `markdownify`
+- **Optional LLM summary** via LiteLLM (`--summary`, `--model`)
+- **Typed errors** → stable CLI exit codes (see [SPEC.md](SPEC.md) §7)
+
+**Scope today:** `SOURCE` must be an **http(s) URL**. Local files and extra output formats are **planned** (see SPEC §5).
+
+## 📦 Install
+
+**From a clone (dev):**
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -U pip
+source .venv/bin/activate   # Windows: .\.venv\Scripts\Activate.ps1
+pip install -U pip
 pip install -e ".[dev]"
-```
-
-La commande **`ai-context`** est alors disponible dans l’environnement activé.
-
-Vérifier :
-
-```bash
 ai-context --help
 ```
 
-## Utilisation rapide
+**From PyPI** (once published): `pip install ai-context`
+
+Requires **Python 3.11+**.
+
+## 🤖 LLM providers (LiteLLM)
+
+`--summary` uses [LiteLLM](https://github.com/BerriAI/litellm) model ids. Set the provider’s **native** env vars (also read from a `.env` in the working directory when `--summary` is used).
+
+| Provider | Example `--model` | Credentials |
+|----------|-------------------|---------------|
+| **OpenAI** | `gpt-4o-mini` (default if `--model` omitted) | `OPENAI_API_KEY` |
+| **Anthropic** | `anthropic/claude-3-5-sonnet-latest` | `ANTHROPIC_API_KEY` |
+| **OpenRouter** | `openrouter/openai/gpt-4o-mini` (pick any model slug OpenRouter exposes) | `OPENROUTER_API_KEY` |
+| **Ollama** (local) | `ollama/llama3` | Optional: `OLLAMA_API_BASE` (default `http://localhost:11434`) |
 
 ```bash
-ai-context "https://example.com/article"
-ai-context "https://example.com/article" --summary
-ai-context "https://example.com/article" --summary -v
+ai-context "https://example.com/article" --summary --model "openrouter/openai/gpt-4o-mini"
+ai-context "https://example.com/article" --summary --model "ollama/llama3"
 ```
 
-## Tests automatisés
+See [.env.example](.env.example) for other keys (`MISTRAL_API_KEY`, timeouts, etc.).
+
+## 🧪 Tests & lint
 
 ```bash
 pytest
+ruff check .
+ruff format --check .
+mypy src
 ```
 
-## Tutoriel — vérification manuelle (même installation que ci-dessus)
+## 🤝 Contributing
 
-Objectif : valider la CLI après `pip install -e ".[dev]"`, sans autre contournement.
+See [CONTRIBUTING.md](CONTRIBUTING.md) (layers, ports/adapters, where to put code).
 
-### 1. Préparer le terminal
+## 📄 License
 
-Active le venv (voir plus haut), place-toi à la racine du repo.
-
-### 2. Aide
-
-```bash
-ai-context --help
-```
-
-Tu dois voir l’argument **SOURCE**, **--summary / --no-summary**, **--verbose / -v**.
-
-### 3. Fichier local → erreur, code **4**
-
-```bash
-ai-context ./README.md
-```
-
-**Attendu** : message d’erreur sur **stderr** (style Rich, « Error: »), mention du fait que seules les URLs HTTP(S) sont prises en charge ; **code de sortie 4**.
-
-Sous PowerShell, après la commande : `echo $LASTEXITCODE` doit afficher **4**. Sous bash : `echo $?` (juste après, souvent **4**).
-
-### 4. URL invalide → code **2**
-
-```bash
-ai-context "https://"
-```
-
-**Attendu** : erreur explicite (URL invalide) ; **code 2**.
-
-### 5. URL valide → succès sur stdout
-
-```bash
-ai-context "https://example.com/article"
-```
-
-**Attendu** : **code 0** ; sur **stdout** du Markdown stub (`# Stub document`, « First stub sentence », etc.) ; **pas** de section `## Summary (stub)` sans `--summary`.
-
-### 6. Résumé stub (trois premières phrases)
-
-```bash
-ai-context "https://example.com/article" --summary
-```
-
-**Attendu** : **code 0** ; après le corps, bloc **`## Summary (stub)`** ; la phrase « Fourth stub sentence » **n’apparaît pas** dans ce bloc résumé (elle peut rester dans le corps au-dessus).
-
-Les deux ordres suivants doivent fonctionner :
-
-```bash
-ai-context "https://example.com/article" --summary
-ai-context --summary "https://example.com/article"
-```
-
-### 7. Verbose
-
-```bash
-ai-context "https://example.com/article" --summary -v
-```
-
-**Attendu** : **code 0** ; logs sur **stderr** ; **stdout** inchangé en nature (markdown + résumé), sans mélanger les logs dans le contenu pipé.
-
-### 8. Grille rapide
-
-| Cas                         | Code |
-|----------------------------|------|
-| Chemin fichier local       | 4    |
-| `https://` invalide        | 2    |
-| URL OK                     | 0    |
-| URL + `--summary` + `-v`   | 0    |
-
-## Licence
-
-MIT (voir `pyproject.toml`).
+MIT — see [LICENSE](LICENSE).

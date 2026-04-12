@@ -8,11 +8,41 @@ build-backend = "hatchling.build"
 [project]
 name = "ai-context"
 version = "0.1.0"
-description = "CLI that transforms a URL or file into clean Markdown, a summary, and an AI-readable structure."
+description = "CLI: fetch an HTTP(S) URL, extract readable article HTML (Readability), emit Markdown; optional LLM summary via LiteLLM. Local file sources are planned (v1.x)."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-keywords = ["cli", "ai", "markdown", "scraper", "llm", "context"]
+authors = [{ name = "CAO Anh (Lam)" }]
+keywords = [
+    "cli",
+    "ai",
+    "markdown",
+    "scraper",
+    "llm",
+    "context",
+    "readability",
+    "litellm",
+    "ollama",
+    "openrouter",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Text Processing :: Markup",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/Hushout/ai-context"
+Repository = "https://github.com/Hushout/ai-context"
+Issues = "https://github.com/Hushout/ai-context/issues"
+Documentation = "https://github.com/Hushout/ai-context#readme"
 
 dependencies = [
     "typer[all]>=0.12",        # [all] pulls in rich + shellingham
