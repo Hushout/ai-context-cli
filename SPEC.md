@@ -297,7 +297,7 @@ Toutes les erreurs sont typées, jamais avalées silencieusement.
 | `OutputError` | Impossible d'écrire la sortie | 5 |
 | `SummarizerAuthenticationError` | Identifiants LLM refusés par le fournisseur | 6 |
 | `SummarizerRateLimitError` | Quota / rate limit côté fournisseur LLM | 7 |
-| `SummarizerConfigurationError` | Résumé demandé sans adaptateur, ou **clé API manquante** pour le modèle choisi | 8 |
+| `SummarizerConfigurationError` | Résumé demandé sans adaptateur `Summarizer` injecté | 8 |
 | `SummarizerInvocationError` | Autre échec d’appel LLM (réponse vide, forme inattendue, etc.) | 9 |
 
 Les erreurs partent sur `stderr`. `stdout` reste propre pour le piping.

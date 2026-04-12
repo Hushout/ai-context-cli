@@ -7,7 +7,6 @@ import pytest
 from ai_context.domain.exceptions import (
     ParseError,
     SummarizerAuthenticationError,
-    SummarizerConfigurationError,
     SummarizerInvocationError,
     SummarizerRateLimitError,
 )
@@ -20,28 +19,38 @@ def test_empty_text_raises_parse_error() -> None:
         summarizer.summarize("   \n")
 
 
-def test_missing_openai_key(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_openrouter_calls_completion_without_openai_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No pre-flight env check: LiteLLM runs (here mocked) even without OPENAI_API_KEY."""
+
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    summarizer = LiteLLMSummarizer("gpt-4o-mini")
-    with pytest.raises(SummarizerConfigurationError):
-        summarizer.summarize("Hello there.")
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    seen: list[str] = []
+
+    def fake_completion(**kwargs: object) -> object:
+        seen.append(str(kwargs.get("model", "")))
+
+        class _Msg:
+            content = "ok"
+
+        class _Choice:
+            message = _Msg()
+
+        class _Resp:
+            choices = [_Choice()]
+
+        return _Resp()
+
+    import litellm
+
+    monkeypatch.setattr(litellm, "completion", fake_completion)
+    summarizer = LiteLLMSummarizer("openrouter/openai/gpt-4o-mini")
+    assert summarizer.summarize("hi") == "ok"
+    assert seen == ["openrouter/openai/gpt-4o-mini"]
 
 
-def test_missing_anthropic_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    summarizer = LiteLLMSummarizer("anthropic/claude-3-haiku-20240307")
-    with pytest.raises(SummarizerConfigurationError):
-        summarizer.summarize("x")
-
-
-def test_missing_mistral_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("MISTRAL_API_KEY", raising=False)
-    summarizer = LiteLLMSummarizer("mistral/mistral-small-latest")
-    with pytest.raises(SummarizerConfigurationError):
-        summarizer.summarize("x")
-
-
-def test_ollama_skips_api_key_check(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ollama_calls_completion(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     def fake_completion(**_kwargs: object) -> object:
@@ -63,9 +72,24 @@ def test_ollama_skips_api_key_check(monkeypatch: pytest.MonkeyPatch) -> None:
     assert summarizer.summarize("Hi.") == "Local summary."
 
 
-def test_completion_auth_failure_mapped(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+def test_litellm_authentication_error_mapped(monkeypatch: pytest.MonkeyPatch) -> None:
+    from litellm.exceptions import AuthenticationError
 
+    def boom(**_kwargs: object) -> None:
+        raise AuthenticationError("invalid", llm_provider="openrouter", model="x", response=None)
+
+    import litellm
+
+    monkeypatch.setattr(litellm, "completion", boom)
+    summarizer = LiteLLMSummarizer("openrouter/openai/gpt-4o-mini")
+    with pytest.raises(SummarizerAuthenticationError) as excinfo:
+        summarizer.summarize("text")
+    assert "OPENROUTER_API_KEY" in str(excinfo.value)
+
+
+def test_completion_auth_failure_string_fallback_mapped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def boom(**_kwargs: object) -> None:
         raise RuntimeError("AuthenticationError: invalid api key")
 
@@ -78,8 +102,6 @@ def test_completion_auth_failure_mapped(monkeypatch: pytest.MonkeyPatch) -> None
 
 
 def test_completion_rate_limit_mapped(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-
     def boom(**_kwargs: object) -> None:
         raise RuntimeError("rate limit exceeded (429)")
 
@@ -91,9 +113,21 @@ def test_completion_rate_limit_mapped(monkeypatch: pytest.MonkeyPatch) -> None:
         summarizer.summarize("text")
 
 
-def test_completion_success(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+def test_litellm_rate_limit_error_mapped(monkeypatch: pytest.MonkeyPatch) -> None:
+    from litellm.exceptions import RateLimitError
 
+    def boom(**_kwargs: object) -> None:
+        raise RateLimitError("slow down", llm_provider="openai", model="x", response=None)
+
+    import litellm
+
+    monkeypatch.setattr(litellm, "completion", boom)
+    summarizer = LiteLLMSummarizer("gpt-4o-mini")
+    with pytest.raises(SummarizerRateLimitError):
+        summarizer.summarize("text")
+
+
+def test_completion_success(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_completion(**_kwargs: object) -> object:
         class _Msg:
             content = "Done."
@@ -114,8 +148,6 @@ def test_completion_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_empty_llm_response_raises(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-
     def fake_completion(**_kwargs: object) -> object:
         class _Msg:
             content = "  "

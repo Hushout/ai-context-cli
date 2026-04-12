@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import os
-
 from ai_context.domain.exceptions import (
     ParseError,
     SummarizerAuthenticationError,
-    SummarizerConfigurationError,
     SummarizerInvocationError,
     SummarizerRateLimitError,
 )
@@ -22,35 +19,38 @@ _SYSTEM_PROMPT = (
 
 _MAX_INPUT_CHARS = 120_000
 
-
-def _require_provider_credentials(model: str) -> None:
-    m = model.lower().strip()
-    if m.startswith("ollama/") or m.startswith("ollama_chat/"):
-        return
-    if m.startswith("anthropic/"):
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            raise SummarizerConfigurationError(
-                "Missing ANTHROPIC_API_KEY in the environment (or .env) for this model.",
-            )
-        return
-    if m.startswith("mistral/") or m.startswith("mistralai/"):
-        if not os.environ.get("MISTRAL_API_KEY"):
-            raise SummarizerConfigurationError(
-                "Missing MISTRAL_API_KEY in the environment (or .env) for this model.",
-            )
-        return
-    if not os.environ.get("OPENAI_API_KEY"):
-        raise SummarizerConfigurationError(
-            "Missing OPENAI_API_KEY in the environment (or .env). "
-            "OpenAI-compatible models (e.g. gpt-4o-mini) require this variable.",
-        )
+_AUTH_HELP = (
+    "LLM authentication failed. Set the API key your provider expects "
+    "(e.g. OPENROUTER_API_KEY for openrouter/…, OPENAI_API_KEY for OpenAI, "
+    "ANTHROPIC_API_KEY for anthropic/…). See LiteLLM provider docs."
+)
 
 
 def _map_provider_error(exc: BaseException) -> None:
+    """Map LiteLLM / HTTP client failures to domain errors (imports litellm lazily)."""
+
+    auth_types: tuple[type[BaseException], ...] = ()
+    rate_types: tuple[type[BaseException], ...] = ()
+    try:
+        from litellm.exceptions import (  # noqa: I001, PLC0415
+            AuthenticationError as LitellmAuthenticationError,
+            RateLimitError as LitellmRateLimitError,
+        )
+
+        auth_types = (LitellmAuthenticationError,)
+        rate_types = (LitellmRateLimitError,)
+    except ImportError:
+        pass
+
+    if auth_types and isinstance(exc, auth_types):
+        raise SummarizerAuthenticationError(_AUTH_HELP) from exc
+
     name = type(exc).__name__
     lower = str(exc).lower()
     if "AuthenticationError" in name or "authentication" in lower or "invalid api key" in lower:
-        raise SummarizerAuthenticationError(f"LLM authentication failed: {exc}") from exc
+        raise SummarizerAuthenticationError(_AUTH_HELP) from exc
+    if rate_types and isinstance(exc, rate_types):
+        raise SummarizerRateLimitError(f"LLM rate limit exceeded: {exc}") from exc
     if "RateLimit" in name or "rate limit" in lower or "429" in lower:
         raise SummarizerRateLimitError(f"LLM rate limit exceeded: {exc}") from exc
     raise SummarizerInvocationError(f"LLM summarization failed: {exc}") from exc
@@ -66,8 +66,6 @@ class LiteLLMSummarizer(Summarizer):
     def summarize(self, text: str) -> str:
         if not text.strip():
             raise ParseError("Cannot summarize empty document text.")
-
-        _require_provider_credentials(self._model)
 
         from litellm import completion  # noqa: PLC0415 — lazy import (cold start)
 
