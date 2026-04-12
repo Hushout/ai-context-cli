@@ -20,6 +20,8 @@ Les LLMs sont sensibles au bruit. HTML brut, boilerplate, publicités et menus d
 | **Composabilité** | La sortie peut aller vers stdout, un fichier, ou être pipée dans un autre outil. |
 | **Dépendances minimales** | Priorité aux libs Python standard et bien maintenues. |
 
+Le résumé **assisté par LLM** (via **LiteLLM**) est **optionnel** : activé uniquement avec `--summary` et des identifiants de modèle / clés API configurés. Sans cette option, aucun SDK LLM n’est chargé (import paresseux dans l’adaptateur).
+
 ## 3. Non-Goals (v1)
 
 - Pas de rendu JavaScript / automatisation navigateur (reporté v2 via Playwright).
@@ -42,8 +44,10 @@ Les LLMs sont sensibles au bruit. HTML brut, boilerplate, publicités et menus d
 | YAML | `pyyaml` | Stdlib-like, standard |
 | Tests | `pytest` + `pytest-httpx` | Fixtures, mocking HTTP sans serveur réel |
 | Packaging | `pyproject.toml` (hatchling) | Standard PEP 517/518 |
+| Résumé LLM | `litellm` | Multi-fournisseurs ; **import uniquement** lors d’un appel `--summary` (lazy dans l’adaptateur) |
+| Chargement `.env` | `python-dotenv` | Appelé **uniquement** depuis le CLI lorsque `--summary` est utilisé |
 
-**Pas de SDK LLM** en v1 — l'interface `Summarizer` est prévue pour le swap en v1.1.
+L’interface `Summarizer` (port domaine) est implémentée côté infrastructure (extractif pour les tests, LiteLLM pour la prod). La couche **application** ne référence jamais `litellm`.
 
 ---
 
@@ -65,7 +69,8 @@ ai-context [OPTIONS] SOURCE
 |-----------------|------|--------|-------------|--------|
 | `--url` | — | — | **Pas de flag `--url` en ligne de commande.** L’URL est passée comme argument positionnel `SOURCE` (ex. `ai-context "https://…"`). Capacité « URL en entrée » : **Implemented** via `SOURCE`. | **Implemented** |
 | `SOURCE` | `str` | *requis* | URL HTTP(S) à récupérer et convertir en Markdown (argument positionnel Typer). | **Implemented** |
-| `--summary` / `--no-summary` | `bool` | `False` | Ajouter un résumé extractif minimal (trois premières phrases à partir du HTML article). | **Implemented** |
+| `--summary` / `--no-summary` | `bool` | `False` | Ajouter un résumé **LLM** (LiteLLM). Défaut du modèle : `gpt-4o-mini` (OpenAI) si `--model` est omis. | **Implemented** |
+| `--model` | `str` | *défaut OpenAI* | Identifiant LiteLLM (`gpt-4o-mini`, `anthropic/claude-3-5-sonnet-latest`, `ollama/llama3`, …). | **Implemented** |
 | `--verbose`, `-v` | `bool` | `False` | Journaliser les étapes du pipeline sur stderr (Rich). | **Implemented** |
 | `--output`, `-o` | `Path` | stdout | Chemin de sortie | **Planned v1.x** |
 | `--format`, `-f` | `markdown\|json\|yaml\|all` | `markdown` | Format de sortie | **Planned v1.x** |
@@ -79,8 +84,11 @@ ai-context [OPTIONS] SOURCE
 # Minimal : Markdown vers stdout (comportement actuel)
 ai-context https://example.com/article
 
-# Avec résumé extractif et logs (comportement actuel)
+# Avec résumé LLM (clés natives dans l’environnement ou .env) et logs
 ai-context https://example.com/article --summary --verbose
+
+# Anthropic explicite
+# ai-context https://example.com/article --summary --model anthropic/claude-3-5-sonnet-latest
 
 # Exemples cibles v1.x (options non encore câblées dans le CLI)
 # ai-context https://example.com/article --format all -o ./output/
@@ -192,6 +200,10 @@ class ParseError(AiContextError): ...
 class SourceNotFoundError(AiContextError): ...   # not FileNotFoundError — avoids shadowing Python builtin
 class UnsupportedFormatError(AiContextError): ...
 class OutputError(AiContextError): ...
+class SummarizerAuthenticationError(AiContextError): ...
+class SummarizerRateLimitError(AiContextError): ...
+class SummarizerConfigurationError(AiContextError): ...
+class SummarizerInvocationError(AiContextError): ...
 ```
 
 ### 6.3 Application Layer — `src/ai_context/application/`
@@ -216,6 +228,7 @@ class ProcessSourceUseCase:
         fetcher: ContentFetcher,
         extractor: ContentExtractor,
         html_to_markdown: Callable[[str], str],
+        summarizer: Summarizer | None = None,
     ) -> None: ...
 
     def execute(self, cmd: ProcessSourceCommand) -> ProcessedContent: ...
@@ -231,7 +244,8 @@ Implémentations concrètes des ports.
 | `fetchers/file_fetcher.py` | `ContentFetcher` | `pathlib` |
 | `extractors/readability_extractor.py` | `ContentExtractor` | `readability-lxml` |
 | `processors/markdown_converter.py` | — | `markdownify` |
-| `processors/extractive_summarizer.py` | `Summarizer` | scoring maison |
+| `summarizers/extractive_summarizer.py` | `Summarizer` | heuristique « trois phrases » (tests) |
+| `summarizers/litellm_summarizer.py` | `Summarizer` | `litellm` (**import lazy** dans `summarize`) |
 | `processors/structure_analyzer.py` | — | parsing Markdown natif |
 | `formatters/markdown_formatter.py` | `OutputFormatter` | — |
 | `formatters/json_formatter.py` | `OutputFormatter` | Pydantic `.model_dump_json()` |
@@ -242,6 +256,7 @@ Implémentations concrètes des ports.
 
 - Client synchrone `httpx.Client` (pas d’`asyncio` en CLI v1) ; la méthode `_perform_get(client, url)` centralise le `GET` et `raise_for_status()` pour pouvoir être recopiée plus tard en variante async avec `httpx.AsyncClient`.
 - Timeout par défaut **10 s** ; surcharge via variable d’environnement `AI_CONTEXT_FETCH_TIMEOUT` (valeur en **millisecondes**, comme documenté en §8).
+- Le résumé LLM utilise un timeout **distinct** (**30 s** par défaut, côté adaptateur LiteLLM), indépendant du fetch HTTP.
 - En-tête **User-Agent** explicite (chaîne du projet) pour limiter les blocages triviaux.
 - Toute réponse **non 2xx** (dont **404** et **500**), ainsi que timeouts et erreurs de transport, est mappée vers `NetworkError` (cause d’origine conservée quand c’est pertinent).
 
@@ -280,6 +295,10 @@ Toutes les erreurs sont typées, jamais avalées silencieusement.
 | `SourceNotFoundError` | Fichier local absent | 3 |
 | `UnsupportedFormatError` | Type de fichier non supporté | 4 |
 | `OutputError` | Impossible d'écrire la sortie | 5 |
+| `SummarizerAuthenticationError` | Identifiants LLM refusés par le fournisseur | 6 |
+| `SummarizerRateLimitError` | Quota / rate limit côté fournisseur LLM | 7 |
+| `SummarizerConfigurationError` | Résumé demandé sans adaptateur `Summarizer` injecté | 8 |
+| `SummarizerInvocationError` | Autre échec d’appel LLM (réponse vide, forme inattendue, etc.) | 9 |
 
 Les erreurs partent sur `stderr`. `stdout` reste propre pour le piping.
 
@@ -290,10 +309,13 @@ Le handler d'erreurs central vit dans le CLI (couche interface) — il mappe les
 ## 8. Variables d'Environnement
 
 ```env
-# Backend LLM pour le résumé assisté par IA (v1.1+)
-# AI_CONTEXT_LLM_PROVIDER=openai     # openai | anthropic | ollama
-# AI_CONTEXT_LLM_API_KEY=
-# AI_CONTEXT_LLM_MODEL=gpt-4o-mini
+# Clés « natives » attendues par LiteLLM / les providers (exemples)
+# OPENAI_API_KEY=
+# ANTHROPIC_API_KEY=
+# MISTRAL_API_KEY=
+
+# Ollama local (optionnel)
+# OLLAMA_API_BASE=http://localhost:11434
 
 # Timeout HTTP en ms (défaut : 10000)
 # AI_CONTEXT_FETCH_TIMEOUT=10000
@@ -302,7 +324,7 @@ Le handler d'erreurs central vit dans le CLI (couche interface) — il mappe les
 # AI_CONTEXT_MAX_CONTENT_SIZE=2097152
 ```
 
-Aucun secret hardcodé. `.env.example` committé ; `.env` dans `.gitignore`.
+`python-dotenv` charge un fichier `.env` **au répertoire courant** uniquement lorsque `--summary` est utilisé (voir CLI). Aucun secret hardcodé. `.env.example` committé ; `.env` dans `.gitignore`.
 
 ---
 
@@ -311,7 +333,7 @@ Aucun secret hardcodé. `.env.example` committé ; `.env` dans `.gitignore`.
 - **Tests unitaires** (pytest) : chaque processeur et formateur en isolation avec des fixtures HTML/MD statiques.
 - **Tests d'intégration** : pipeline complet sur fixtures locales — `pytest-httpx` mocke les appels HTTP, aucun vrai réseau en CI.
 - **Tests E2E** (optionnels, désactivés en CI) : fetch URL réelle, activés via `TEST_E2E=true`.
-- **Couverture cible** : ≥ 80% sur `domain/` et `infrastructure/processors/`.
+- **Couverture cible** : ≥ 80% sur `domain/` et `infrastructure/processors/` + `infrastructure/summarizers/`.
 
 ---
 
@@ -343,10 +365,13 @@ ai-context/
 │       │   ├── extractors/
 │       │   │   ├── __init__.py
 │       │   │   └── readability_extractor.py
+│       │   ├── summarizers/
+│       │   │   ├── __init__.py
+│       │   │   ├── extractive_summarizer.py
+│       │   │   └── litellm_summarizer.py
 │       │   ├── processors/
 │       │   │   ├── __init__.py
 │       │   │   ├── markdown_converter.py  # HTML → Markdown (markdownify)
-│       │   │   ├── extractive_summarizer.py
 │       │   │   └── structure_analyzer.py
 │       │   └── formatters/
 │       │       ├── __init__.py
@@ -361,8 +386,7 @@ ai-context/
 │       │
 │       └── utils/
 │           ├── __init__.py
-│           ├── logger.py                 # Rich logger (stderr, verbose)
-│           └── tokens.py                # Estimation tokens (chars / 4)
+│           └── plain_text.py             # HTML → texte + extractif (partagé)
 │
 ├── tests/
 │   ├── conftest.py                       # Fixtures partagées
@@ -428,10 +452,10 @@ target-version = "py311"
 | Version | Périmètre |
 |---------|-----------|
 | **v1.0** | URL + fichier, Markdown output, résumé extractif, structure JSON, suite de tests complète |
-| **v1.1** | Stratégie LLM pour le résumé (OpenAI / Anthropic / Ollama) |
+| **v1.1** | Stratégie LLM pour le résumé (OpenAI / Anthropic / Ollama) — **partiellement livré** (LiteLLM + `--summary` / `--model`) |
 | **v2.0** | Adaptateur Playwright pour pages JS, support PDF via `pdfplumber` |
 | **v2.1** | Mode batch (`--batch urls.txt`), crawl sitemap |
 
 ---
 
-*Dernière mise à jour : 2026-04-11*
+*Dernière mise à jour : 2026-04-12*

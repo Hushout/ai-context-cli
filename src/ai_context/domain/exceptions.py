@@ -55,3 +55,27 @@ class OutputError(AiContextError):
     """Raised when the formatted result cannot be written to the target path."""
 
     exit_code = 5
+
+
+class SummarizerAuthenticationError(AiContextError):
+    """Raised when the LLM provider rejects credentials."""
+
+    exit_code = 6
+
+
+class SummarizerRateLimitError(AiContextError):
+    """Raised when the LLM provider applies a rate limit."""
+
+    exit_code = 7
+
+
+class SummarizerConfigurationError(AiContextError):
+    """Raised when summarization is misconfigured (e.g. missing API key)."""
+
+    exit_code = 8
+
+
+class SummarizerInvocationError(AiContextError):
+    """Raised for other LLM/runtime failures during summarization."""
+
+    exit_code = 9

@@ -1,7 +1,4 @@
-"""Minimal extractive helpers for stub pipeline (HUX-5).
-
-No external APIs: sentence splitting is heuristic (``.?!`` + whitespace).
-"""
+"""Plain-text helpers shared by the use case and summarizer adapters."""
 
 from __future__ import annotations
 

@@ -6,6 +6,10 @@ from .exceptions import (
     OutputError,
     ParseError,
     SourceNotFoundError,
+    SummarizerAuthenticationError,
+    SummarizerConfigurationError,
+    SummarizerInvocationError,
+    SummarizerRateLimitError,
     UnsupportedFormatError,
 )
 from .models import (
@@ -38,4 +42,8 @@ __all__ = [
     "SourceNotFoundError",
     "UnsupportedFormatError",
     "OutputError",
+    "SummarizerAuthenticationError",
+    "SummarizerRateLimitError",
+    "SummarizerConfigurationError",
+    "SummarizerInvocationError",
 ]
