@@ -40,7 +40,7 @@ pip install -e ".[dev]"
 ai-context-cli --help
 ```
 
-**From PyPI** (once published): `pip install ai-context-cli`
+**From PyPI** (once published): [pip install ai-context-cli](https://pypi.org/project/ai-context-cli/0.1.0/)
 
 Requires **Python 3.11+**.
 
