@@ -19,7 +19,7 @@ body:
       label: Steps to reproduce
       description: Command(s) you ran, URL or fixture if relevant.
       placeholder: |
-        ai-context "https://..." --summary
+        ai-context-cli "https://..." --summary
     validations:
       required: true
   - type: textarea
@@ -38,7 +38,7 @@ body:
     id: version
     attributes:
       label: Version / commit
-      description: Output of `ai-context --help` header if present, or `git rev-parse --short HEAD`
+      description: Output of `ai-context-cli --help` header if present, or `git rev-parse --short HEAD`
   - type: input
     id: python
     attributes:

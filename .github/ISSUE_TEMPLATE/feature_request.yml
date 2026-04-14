@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check [SPEC.md](https://github.com/Hushout/ai-context/blob/main/SPEC.md) for roadmap and non-goals before proposing large scope.
+        Check [SPEC.md](https://github.com/Hushout/ai-context-cli/blob/main/SPEC.md) for roadmap and non-goals before proposing large scope.
   - type: textarea
     id: problem
     attributes:

@@ -1,4 +1,4 @@
-# SPEC — ai-context
+# SPEC — ai-context-cli
 
 > CLI Python qui transforme une URL ou un fichier en Markdown propre, résumé clair et structure lisible par IA.
 
@@ -6,7 +6,7 @@
 
 ## 1. Problem Statement
 
-Les LLMs sont sensibles au bruit. HTML brut, boilerplate, publicités et menus de navigation dégradent la qualité du contexte. `ai-context` agit comme couche de pré-traitement : étant donné une URL ou un fichier local, il produit une représentation propre, structurée et économe en tokens, prête à être injectée dans un prompt.
+Les LLMs sont sensibles au bruit. HTML brut, boilerplate, publicités et menus de navigation dégradent la qualité du contexte. `ai-context-cli` agit comme couche de pré-traitement : étant donné une URL ou un fichier local, il produit une représentation propre, structurée et économe en tokens, prête à être injectée dans un prompt.
 
 ---
 
@@ -56,7 +56,7 @@ L’interface `Summarizer` (port domaine) est implémentée côté infrastructur
 ### Usage
 
 ```
-ai-context [OPTIONS] SOURCE
+ai-context-cli [OPTIONS] SOURCE
 ```
 
 **Portée actuelle du dépôt** : seules certaines lignes du tableau ci-dessous sont implémentées. La colonne **Status** indique ce qui existe réellement dans `interfaces/cli.py` par rapport à la feuille de route v1.
@@ -67,7 +67,7 @@ ai-context [OPTIONS] SOURCE
 
 | Option / entrée | Type | Défaut | Description | Status |
 |-----------------|------|--------|-------------|--------|
-| `--url` | — | — | **Pas de flag `--url` en ligne de commande.** L’URL est passée comme argument positionnel `SOURCE` (ex. `ai-context "https://…"`). Capacité « URL en entrée » : **Implemented** via `SOURCE`. | **Implemented** |
+| `--url` | — | — | **Pas de flag `--url` en ligne de commande.** L’URL est passée comme argument positionnel `SOURCE` (ex. `ai-context-cli "https://…"`). Capacité « URL en entrée » : **Implemented** via `SOURCE`. | **Implemented** |
 | `SOURCE` | `str` | *requis* | URL HTTP(S) à récupérer et convertir en Markdown (argument positionnel Typer). | **Implemented** |
 | `--summary` / `--no-summary` | `bool` | `False` | Ajouter un résumé **LLM** (LiteLLM). Défaut du modèle : `gpt-4o-mini` (OpenAI) si `--model` est omis. | **Implemented** |
 | `--model` | `str` | *défaut OpenAI* | Identifiant LiteLLM (`gpt-4o-mini`, `anthropic/claude-3-5-sonnet-latest`, `openrouter/...`, `ollama/llama3`, …). | **Implemented** |
@@ -82,18 +82,18 @@ ai-context [OPTIONS] SOURCE
 
 ```bash
 # Minimal : Markdown vers stdout (comportement actuel)
-ai-context https://example.com/article
+ai-context-cli https://example.com/article
 
 # Avec résumé LLM (clés natives dans l’environnement ou .env) et logs
-ai-context https://example.com/article --summary --verbose
+ai-context-cli https://example.com/article --summary --verbose
 
 # Anthropic explicite
-# ai-context https://example.com/article --summary --model anthropic/claude-3-5-sonnet-latest
+# ai-context-cli https://example.com/article --summary --model anthropic/claude-3-5-sonnet-latest
 
 # Exemples cibles v1.x (options non encore câblées dans le CLI)
-# ai-context https://example.com/article --format all -o ./output/
-# ai-context ./page.html --format markdown --summary
-# ai-context https://example.com --format json | jq '.meta.estimatedTokens'
+# ai-context-cli https://example.com/article --format all -o ./output/
+# ai-context-cli ./page.html --format markdown --summary
+# ai-context-cli https://example.com --format json | jq '.meta.estimatedTokens'
 ```
 
 ---
@@ -116,7 +116,7 @@ ai-context https://example.com/article --summary --verbose
 
 **Règle de dépendance** : les couches hautes dépendent des couches basses. Le `domain` ne dépend de rien. L'`infrastructure` dépend du `domain` (implémente ses ports), jamais l'inverse.
 
-### 6.2 Domain Layer — `src/ai_context/domain/`
+### 6.2 Domain Layer — `src/ai_context_cli/domain/`
 
 Cœur métier pur. Aucune dépendance sur httpx, typer, ou toute lib d'infrastructure.
 
@@ -206,7 +206,7 @@ class SummarizerConfigurationError(AiContextError): ...
 class SummarizerInvocationError(AiContextError): ...
 ```
 
-### 6.3 Application Layer — `src/ai_context/application/`
+### 6.3 Application Layer — `src/ai_context_cli/application/`
 
 Un seul use case en v1 : `ProcessSourceUseCase`. Il reçoit les ports par injection de dépendances (pas d'import direct d'infrastructure). La conversion HTML → Markdown est injectée sous forme de callable (`html_to_markdown`) depuis la couche interface pour éviter qu'`application` importe `markdownify`.
 
@@ -234,7 +234,7 @@ class ProcessSourceUseCase:
     def execute(self, cmd: ProcessSourceCommand) -> ProcessedContent: ...
 ```
 
-### 6.4 Infrastructure Layer — `src/ai_context/infrastructure/`
+### 6.4 Infrastructure Layer — `src/ai_context_cli/infrastructure/`
 
 Implémentations concrètes des ports.
 
@@ -255,12 +255,12 @@ Implémentations concrètes des ports.
 **HTTP fetcher (implémenté, v1)** — `HttpContentFetcher` dans `fetchers/http_fetcher.py` :
 
 - Client synchrone `httpx.Client` (pas d’`asyncio` en CLI v1) ; la méthode `_perform_get(client, url)` centralise le `GET` et `raise_for_status()` pour pouvoir être recopiée plus tard en variante async avec `httpx.AsyncClient`.
-- Timeout par défaut **10 s** ; surcharge via variable d’environnement `AI_CONTEXT_FETCH_TIMEOUT` (valeur en **millisecondes**, comme documenté en §8).
+- Timeout par défaut **10 s** ; surcharge via variable d’environnement `AI_CONTEXT_CLI_FETCH_TIMEOUT` (valeur en **millisecondes**, comme documenté en §8).
 - Le résumé LLM utilise un timeout **distinct** (**30 s** par défaut, côté adaptateur LiteLLM), indépendant du fetch HTTP.
 - En-tête **User-Agent** explicite (chaîne du projet) pour limiter les blocages triviaux.
 - Toute réponse **non 2xx** (dont **404** et **500**), ainsi que timeouts et erreurs de transport, est mappée vers `NetworkError` (cause d’origine conservée quand c’est pertinent).
 
-### 6.5 Interface Layer — `src/ai_context/interfaces/`
+### 6.5 Interface Layer — `src/ai_context_cli/interfaces/`
 
 CLI Typer. Responsabilité unique : parser les arguments, construire le use case avec les bons adaptateurs, afficher le résultat.
 
@@ -277,7 +277,7 @@ def main(
 ) -> None: ...
 
 def run_app() -> None:
-    typer.run(main)  # script d’entrée paquet : ai_context.interfaces.cli:run_app
+    typer.run(main)  # script d’entrée paquet : ai_context_cli.interfaces.cli:run_app
 ```
 
 Les options `--output`, `--format`, `--structure`, `--max-tokens` restent **Planned v1.x** (voir tableau §5).
@@ -318,10 +318,10 @@ Le handler d'erreurs central vit dans le CLI (couche interface) — il mappe les
 # OLLAMA_API_BASE=http://localhost:11434
 
 # Timeout HTTP en ms (défaut : 10000)
-# AI_CONTEXT_FETCH_TIMEOUT=10000
+# AI_CONTEXT_CLI_FETCH_TIMEOUT=10000
 
 # Taille max du contenu en octets avant troncature (défaut : 2MB)
-# AI_CONTEXT_MAX_CONTENT_SIZE=2097152
+# AI_CONTEXT_CLI_MAX_CONTENT_SIZE=2097152
 ```
 
 `python-dotenv` charge un fichier `.env` **au répertoire courant** uniquement lorsque `--summary` est utilisé (voir CLI). Aucun secret hardcodé. `.env.example` committé ; `.env` dans `.gitignore`.
@@ -340,10 +340,10 @@ Le handler d'erreurs central vit dans le CLI (couche interface) — il mappe les
 ## 10. Arborescence du Projet
 
 ```
-ai-context/
+ai-context-cli/
 │
 ├── src/
-│   └── ai_context/
+│   └── ai_context_cli/
 │       ├── __init__.py
 │       │
 │       ├── domain/                        # Cœur métier pur
@@ -422,7 +422,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ai-context"
+name = "ai-context-cli"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
@@ -435,7 +435,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ai-context = "ai_context.interfaces.cli:run_app"
+ai-context-cli = "ai_context_cli.interfaces.cli:run_app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

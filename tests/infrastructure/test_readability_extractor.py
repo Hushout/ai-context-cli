@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from ai_context.domain.exceptions import ParseError
-from ai_context.domain.models import RawContent
-from ai_context.infrastructure.extractors.readability_extractor import ReadabilityExtractor
+from ai_context_cli.domain.exceptions import ParseError
+from ai_context_cli.domain.models import RawContent
+from ai_context_cli.infrastructure.extractors.readability_extractor import ReadabilityExtractor
 
 _ARTICLE_HTML = """<!DOCTYPE html>
 <html lang="en">

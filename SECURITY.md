@@ -10,7 +10,7 @@ We aim to support the **latest minor release** on the default branch. Security f
 
 Instead:
 
-1. Use [GitHub Security Advisories](https://github.com/Hushout/ai-context/security/advisories/new) for this repository if you have access, **or**
+1. Use [GitHub Security Advisories](https://github.com/Hushout/ai-context-cli/security/advisories/new) for this repository if you have access, **or**
 2. Open a **private** vulnerability report if the repository owner has enabled private reporting for contributors.
 
 Include:

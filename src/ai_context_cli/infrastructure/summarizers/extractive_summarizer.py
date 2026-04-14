@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from ai_context.domain.ports import Summarizer
-from ai_context.utils.plain_text import first_three_sentences
+from ai_context_cli.domain.ports import Summarizer
+from ai_context_cli.utils.plain_text import first_three_sentences
 
 
 class ExtractiveSummarizer(Summarizer):

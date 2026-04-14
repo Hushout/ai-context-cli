@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from pytest_httpx import HTTPXMock
 
-from ai_context.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
-from ai_context.infrastructure.extractors import ReadabilityExtractor
-from ai_context.infrastructure.fetchers import HttpContentFetcher
-from ai_context.infrastructure.processors.markdown_converter import html_fragment_to_markdown
+from ai_context_cli.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
+from ai_context_cli.infrastructure.extractors import ReadabilityExtractor
+from ai_context_cli.infrastructure.fetchers import HttpContentFetcher
+from ai_context_cli.infrastructure.processors.markdown_converter import html_fragment_to_markdown
 
 _BLOG_HTML = """<!DOCTYPE html>
 <html><head><title>My Article</title></head>

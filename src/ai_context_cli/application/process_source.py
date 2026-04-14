@@ -8,10 +8,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from ai_context.domain.exceptions import SummarizerConfigurationError
-from ai_context.domain.models import ContentMeta, ProcessedContent
-from ai_context.domain.ports import ContentExtractor, ContentFetcher, Summarizer
-from ai_context.utils.plain_text import html_to_plain_text_stub
+from ai_context_cli.domain.exceptions import SummarizerConfigurationError
+from ai_context_cli.domain.models import ContentMeta, ProcessedContent
+from ai_context_cli.domain.ports import ContentExtractor, ContentFetcher, Summarizer
+from ai_context_cli.utils.plain_text import html_to_plain_text_stub
 
 logger = logging.getLogger(__name__)
 

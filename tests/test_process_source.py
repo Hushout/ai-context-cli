@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from ai_context.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
-from ai_context.domain.exceptions import SummarizerConfigurationError
-from ai_context.infrastructure.extractors import StubContentExtractor
-from ai_context.infrastructure.fetchers import StubContentFetcher
-from ai_context.infrastructure.processors.markdown_converter import html_fragment_to_markdown
-from ai_context.infrastructure.summarizers import ExtractiveSummarizer
+from ai_context_cli.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
+from ai_context_cli.domain.exceptions import SummarizerConfigurationError
+from ai_context_cli.infrastructure.extractors import StubContentExtractor
+from ai_context_cli.infrastructure.fetchers import StubContentFetcher
+from ai_context_cli.infrastructure.processors.markdown_converter import html_fragment_to_markdown
+from ai_context_cli.infrastructure.summarizers import ExtractiveSummarizer
 
 
 def test_execute_without_summary() -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import HttpUrl, TypeAdapter, ValidationError
 
-from ai_context.domain.exceptions import ParseError, UnsupportedFormatError
+from ai_context_cli.domain.exceptions import ParseError, UnsupportedFormatError
 
 _http_url_adapter = TypeAdapter(HttpUrl)
 

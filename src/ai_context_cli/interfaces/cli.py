@@ -1,4 +1,4 @@
-"""Typer CLI — thin interface layer over :mod:`ai_context.application`."""
+"""Typer CLI — thin interface layer over :mod:`ai_context_cli.application`."""
 
 from __future__ import annotations
 
@@ -10,13 +10,13 @@ import typer
 from rich.console import Console
 from rich.logging import RichHandler
 
-from ai_context.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
-from ai_context.application.source_gate import validate_http_url_command_source
-from ai_context.domain.exceptions import AiContextError
-from ai_context.domain.ports import Summarizer
-from ai_context.infrastructure.extractors import ReadabilityExtractor
-from ai_context.infrastructure.fetchers import HttpContentFetcher
-from ai_context.infrastructure.processors.markdown_converter import html_fragment_to_markdown
+from ai_context_cli.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
+from ai_context_cli.application.source_gate import validate_http_url_command_source
+from ai_context_cli.domain.exceptions import AiContextError
+from ai_context_cli.domain.ports import Summarizer
+from ai_context_cli.infrastructure.extractors import ReadabilityExtractor
+from ai_context_cli.infrastructure.fetchers import HttpContentFetcher
+from ai_context_cli.infrastructure.processors.markdown_converter import html_fragment_to_markdown
 
 _err = Console(stderr=True, highlight=False)
 
@@ -24,9 +24,9 @@ _DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 
 
 def _configure_verbose_logging() -> None:
-    """Route *ai_context* logs through Rich on stderr."""
+    """Route *ai_context_cli* logs through Rich on stderr."""
 
-    pkg = logging.getLogger("ai_context")
+    pkg = logging.getLogger("ai_context_cli")
     pkg.setLevel(logging.INFO)
     handler = RichHandler(
         console=_err,
@@ -56,7 +56,7 @@ def _maybe_load_dotenv_for_summary() -> None:
 def _build_summarizer_for_cli(model: str) -> Summarizer:
     """Factory hook — tests patch this symbol to avoid real LLM calls."""
 
-    from ai_context.infrastructure.summarizers.litellm_summarizer import (  # noqa: PLC0415
+    from ai_context_cli.infrastructure.summarizers.litellm_summarizer import (  # noqa: PLC0415
         LiteLLMSummarizer,
     )
 
@@ -98,7 +98,7 @@ def main(
         typer.Option("--verbose", "-v", help="Log pipeline steps to stderr."),
     ] = False,
 ) -> None:
-    """Transform an HTTP(S) URL through fetch → Readability → Markdown."""
+    """Transform an HTTP(S) URL through fetch -> Readability -> Markdown."""
 
     if verbose:
         _configure_verbose_logging()

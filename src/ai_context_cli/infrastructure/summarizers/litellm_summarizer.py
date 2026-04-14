@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from ai_context.domain.exceptions import (
+from ai_context_cli.domain.exceptions import (
     ParseError,
     SummarizerAuthenticationError,
     SummarizerInvocationError,
     SummarizerRateLimitError,
 )
-from ai_context.domain.ports import Summarizer
+from ai_context_cli.domain.ports import Summarizer
 
 _SYSTEM_PROMPT = (
     "You summarize article body text that may be Markdown or plain text. "

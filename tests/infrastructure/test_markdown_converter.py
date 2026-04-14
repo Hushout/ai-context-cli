@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ai_context.infrastructure.processors.markdown_converter import html_fragment_to_markdown
+from ai_context_cli.infrastructure.processors.markdown_converter import html_fragment_to_markdown
 
 
 def test_markdownify_emits_atx_headings() -> None:

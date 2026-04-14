@@ -27,12 +27,12 @@ class ContentFetcher(ABC):
             source: A URL (``https://...``) or an absolute/relative file path.
 
         Returns:
-            A :class:`~ai_context.domain.models.RawContent` instance.
+            A :class:`~ai_context_cli.domain.models.RawContent` instance.
 
         Raises:
-            ~ai_context.domain.exceptions.NetworkError: On HTTP failure or timeout.
-            ~ai_context.domain.exceptions.SourceNotFoundError: If the file does not exist.
-            ~ai_context.domain.exceptions.UnsupportedFormatError: If the MIME type is unsupported.
+            ~ai_context_cli.domain.exceptions.NetworkError: On HTTP failure or timeout.
+            ~ai_context_cli.domain.exceptions.SourceNotFoundError: If the file does not exist.
+            ~ai_context_cli.domain.exceptions.UnsupportedFormatError: Unsupported MIME.
         """
         ...
 
@@ -51,13 +51,13 @@ class ContentExtractor(ABC):
         """Extract the main article from *raw* content.
 
         Args:
-            raw: A :class:`~ai_context.domain.models.RawContent` instance.
+            raw: A :class:`~ai_context_cli.domain.models.RawContent` instance.
 
         Returns:
-            :class:`~ai_context.domain.models.ExtractedContent` with title and article HTML.
+            :class:`~ai_context_cli.domain.models.ExtractedContent` with title and article HTML.
 
         Raises:
-            ~ai_context.domain.exceptions.ParseError: If no readable content is found.
+            ~ai_context_cli.domain.exceptions.ParseError: If no readable content is found.
         """
         ...
 
@@ -80,13 +80,13 @@ class Summarizer(ABC):
             A summary string (shorter than the input).
 
         Raises:
-            ~ai_context.domain.exceptions.ParseError: If the input is empty or unsummarisable.
+            ~ai_context_cli.domain.exceptions.ParseError: If the input is empty or unsummarisable.
         """
         ...
 
 
 class OutputFormatter(ABC):
-    """Serialize a :class:`~ai_context.domain.models.ProcessedContent` to a string.
+    """Serialize a :class:`~ai_context_cli.domain.models.ProcessedContent` to a string.
 
     Implementations: MarkdownFormatter, JsonFormatter, YamlFormatter, AllFormatter.
     """
@@ -96,12 +96,12 @@ class OutputFormatter(ABC):
         """Serialize *content* to the target format.
 
         Args:
-            content: A fully processed :class:`~ai_context.domain.models.ProcessedContent`.
+            content: A fully processed :class:`~ai_context_cli.domain.models.ProcessedContent`.
 
         Returns:
             A formatted string ready to be written to stdout or a file.
 
         Raises:
-            ~ai_context.domain.exceptions.OutputError: On serialization failure.
+            ~ai_context_cli.domain.exceptions.OutputError: On serialization failure.
         """
         ...
