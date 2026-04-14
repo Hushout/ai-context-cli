@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from ai_context.application.source_gate import validate_http_url_command_source
-from ai_context.domain.exceptions import ParseError, UnsupportedFormatError
+from ai_context_cli.application.source_gate import validate_http_url_command_source
+from ai_context_cli.domain.exceptions import ParseError, UnsupportedFormatError
 
 
 def test_rejects_local_path() -> None:

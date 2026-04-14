@@ -1,23 +1,23 @@
-# ai-context
+# ai-context-cli
 
 **HTTP(S) → clean Markdown** for LLM context: `httpx` fetch → Readability → `markdownify`; optional **LiteLLM** summary with `--summary` (lazy-loaded — no LLM stack until you opt in).
 
 ```bash
 # Markdown only (stdout stays pipe-clean; errors → stderr)
-ai-context "https://example.com/article"
+ai-context-cli "https://example.com/article"
 
 # Same + LLM summary (loads .env from cwd for API keys)
-ai-context "https://example.com/article" --summary
+ai-context-cli "https://example.com/article" --summary
 
 # Verbose pipeline logs on stderr
-ai-context "https://example.com/article" --summary -v
+ai-context-cli "https://example.com/article" --summary -v
 ```
 
 Architecture and conventions: [SPEC.md](SPEC.md).
 
 ## ⚡ Why
 
-Raw HTML wastes tokens. `ai-context` is a small preprocessing step: one URL in, readable Markdown (and optionally a short summary) out.
+Raw HTML wastes tokens. `ai-context-cli` is a small preprocessing step: one URL in, readable Markdown (and optionally a short summary) out.
 
 ## 🧩 What you get
 
@@ -37,10 +37,10 @@ python3 -m venv .venv
 source .venv/bin/activate   # Windows: .\.venv\Scripts\Activate.ps1
 pip install -U pip
 pip install -e ".[dev]"
-ai-context --help
+ai-context-cli --help
 ```
 
-**From PyPI** (once published): `pip install ai-context`
+**From PyPI** (once published): [pip install ai-context-cli](https://pypi.org/project/ai-context-cli/0.1.0/)
 
 Requires **Python 3.11+**.
 
@@ -56,8 +56,8 @@ Requires **Python 3.11+**.
 | **Ollama** (local) | `ollama/llama3` | Optional: `OLLAMA_API_BASE` (default `http://localhost:11434`) |
 
 ```bash
-ai-context "https://example.com/article" --summary --model "openrouter/openai/gpt-4o-mini"
-ai-context "https://example.com/article" --summary --model "ollama/llama3"
+ai-context-cli "https://example.com/article" --summary --model "openrouter/openai/gpt-4o-mini"
+ai-context-cli "https://example.com/article" --summary --model "ollama/llama3"
 ```
 
 See [.env.example](.env.example) for other keys (`MISTRAL_API_KEY`, timeouts, etc.).

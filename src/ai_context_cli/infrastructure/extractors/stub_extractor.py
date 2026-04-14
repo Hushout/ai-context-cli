@@ -1,9 +1,9 @@
-"""Stub :class:`~ai_context.domain.ports.ContentExtractor` (no Readability)."""
+"""Stub :class:`~ai_context_cli.domain.ports.ContentExtractor` (no Readability)."""
 
 from __future__ import annotations
 
-from ai_context.domain.models import ExtractedContent, RawContent
-from ai_context.domain.ports import ContentExtractor
+from ai_context_cli.domain.models import ExtractedContent, RawContent
+from ai_context_cli.domain.ports import ContentExtractor
 
 
 class StubContentExtractor(ContentExtractor):

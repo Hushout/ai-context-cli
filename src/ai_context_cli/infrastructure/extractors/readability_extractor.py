@@ -1,12 +1,12 @@
-"""Readability-based :class:`~ai_context.domain.ports.ContentExtractor`."""
+"""Readability-based :class:`~ai_context_cli.domain.ports.ContentExtractor`."""
 
 from __future__ import annotations
 
 from readability import Document
 
-from ai_context.domain.exceptions import ParseError
-from ai_context.domain.models import ExtractedContent, RawContent
-from ai_context.domain.ports import ContentExtractor
+from ai_context_cli.domain.exceptions import ParseError
+from ai_context_cli.domain.models import ExtractedContent, RawContent
+from ai_context_cli.domain.ports import ContentExtractor
 
 
 class ReadabilityExtractor(ContentExtractor):

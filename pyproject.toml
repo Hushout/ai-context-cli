@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 # Package metadata
 # ---------------------------------------------------------------------------
 [project]
-name = "ai-context"
+name = "ai-context-cli"
 version = "0.1.0"
 description = "CLI: fetch an HTTP(S) URL, extract readable article HTML (Readability), emit Markdown; optional LLM summary via LiteLLM. Local file sources are planned (v1.x)."
 readme = "README.md"
@@ -38,12 +38,6 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-[project.urls]
-Homepage = "https://github.com/Hushout/ai-context"
-Repository = "https://github.com/Hushout/ai-context"
-Issues = "https://github.com/Hushout/ai-context/issues"
-Documentation = "https://github.com/Hushout/ai-context#readme"
-
 dependencies = [
     "typer[all]>=0.12",        # [all] pulls in rich + shellingham
     "rich>=13.7",
@@ -56,8 +50,14 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Hushout/ai-context-cli"
+Repository = "https://github.com/Hushout/ai-context-cli"
+Issues = "https://github.com/Hushout/ai-context-cli/issues"
+Documentation = "https://github.com/Hushout/ai-context-cli#readme"
+
 [project.scripts]
-ai-context = "ai_context.interfaces.cli:run_app"
+ai-context-cli = "ai_context_cli.interfaces.cli:run_app"
 
 # ---------------------------------------------------------------------------
 # Optional / dev dependencies
@@ -75,7 +75,7 @@ dev = [
 # Build — src layout
 # ---------------------------------------------------------------------------
 [tool.hatch.build.targets.wheel]
-packages = ["src/ai_context"]
+packages = ["src/ai_context_cli"]
 
 # ---------------------------------------------------------------------------
 # Pytest
@@ -91,8 +91,8 @@ e2e = "end-to-end tests that require network access (deactivated in CI)"
 # Coverage
 # ---------------------------------------------------------------------------
 [tool.coverage.run]
-source = ["src/ai_context"]
-omit = ["src/ai_context/interfaces/*"]  # CLI wiring excluded from coverage target
+source = ["src/ai_context_cli"]
+omit = ["src/ai_context_cli/interfaces/*"]  # CLI wiring excluded from coverage target
 
 [tool.coverage.report]
 fail_under = 80
@@ -113,7 +113,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["ai_context"]
+known-first-party = ["ai_context_cli"]
 
 # ---------------------------------------------------------------------------
 # Mypy

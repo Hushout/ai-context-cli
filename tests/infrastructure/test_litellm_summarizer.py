@@ -1,16 +1,16 @@
-"""Unit tests for :class:`~ai_context.infrastructure.summarizers.LiteLLMSummarizer`."""
+"""Unit tests for :class:`~ai_context_cli.infrastructure.summarizers.LiteLLMSummarizer`."""
 
 from __future__ import annotations
 
 import pytest
 
-from ai_context.domain.exceptions import (
+from ai_context_cli.domain.exceptions import (
     ParseError,
     SummarizerAuthenticationError,
     SummarizerInvocationError,
     SummarizerRateLimitError,
 )
-from ai_context.infrastructure.summarizers.litellm_summarizer import LiteLLMSummarizer
+from ai_context_cli.infrastructure.summarizers.litellm_summarizer import LiteLLMSummarizer
 
 
 def test_empty_text_raises_parse_error() -> None:

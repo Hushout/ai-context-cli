@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ai_context.utils.plain_text import first_three_sentences, html_to_plain_text_stub
+from ai_context_cli.utils.plain_text import first_three_sentences, html_to_plain_text_stub
 
 
 def test_html_to_plain_text_stub_strips_tags() -> None:

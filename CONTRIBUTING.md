@@ -1,4 +1,4 @@
-# Contributing to ai-context
+# Contributing to ai-context-cli
 
 Thanks for improving the project. Keep changes focused, typed, and aligned with the dependency rule below.
 
@@ -50,9 +50,9 @@ The wheel is built with **Hatchling** (`hatchling.build`). You do not need the `
 
 ## Tests
 
-- Prefer **pytest** modules under `tests/` mirroring `src/ai_context/`.
+- Prefer **pytest** modules under `tests/` mirroring `src/ai_context_cli/`.
 - Mark real-network tests with `@pytest.mark.e2e` (skipped unless `TEST_E2E=true`).
 
 ## Questions
 
-Open a [GitHub issue](https://github.com/Hushout/ai-context/issues) or discuss on your PR.
+Open a [GitHub issue](https://github.com/Hushout/ai-context-cli/issues) or discuss on your PR.

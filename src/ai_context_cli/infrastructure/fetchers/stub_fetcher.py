@@ -1,9 +1,9 @@
-"""Stub :class:`~ai_context.domain.ports.ContentFetcher` (no network)."""
+"""Stub :class:`~ai_context_cli.domain.ports.ContentFetcher` (no network)."""
 
 from __future__ import annotations
 
-from ai_context.domain.models import RawContent
-from ai_context.domain.ports import ContentFetcher
+from ai_context_cli.domain.models import RawContent
+from ai_context_cli.domain.ports import ContentFetcher
 
 # Multi-sentence stub body so extractive summary can be exercised (HUX-5).
 _STUB_DOCUMENT_HTML = """<!DOCTYPE html>

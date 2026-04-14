@@ -18,7 +18,7 @@ from __future__ import annotations
 
 
 class AiContextError(Exception):
-    """Base exception for all ai-context domain errors."""
+    """Base exception for all ai-context-cli domain errors."""
 
     exit_code: int = 99
 

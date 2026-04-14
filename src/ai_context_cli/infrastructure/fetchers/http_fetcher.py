@@ -1,4 +1,4 @@
-"""HTTP(S) :class:`~ai_context.domain.ports.ContentFetcher` via ``httpx`` (sync)."""
+"""HTTP(S) :class:`~ai_context_cli.domain.ports.ContentFetcher` via ``httpx`` (sync)."""
 
 from __future__ import annotations
 
@@ -7,18 +7,18 @@ from typing import Final
 
 import httpx
 
-from ai_context.domain.exceptions import NetworkError, UnsupportedFormatError
-from ai_context.domain.models import RawContent
-from ai_context.domain.ports import ContentFetcher
+from ai_context_cli.domain.exceptions import NetworkError, UnsupportedFormatError
+from ai_context_cli.domain.models import RawContent
+from ai_context_cli.domain.ports import ContentFetcher
 
 _DEFAULT_TIMEOUT_MS: Final[int] = 10_000
 _DEFAULT_USER_AGENT: Final[str] = (
-    "ai-context/0.1.0 (+https://github.com/Hushout/ai-context; readability pipeline)"
+    "ai-context-cli/0.1.0 (+https://github.com/Hushout/ai-context-cli; readability pipeline)"
 )
 
 
 def _timeout_seconds() -> float:
-    raw = os.environ.get("AI_CONTEXT_FETCH_TIMEOUT", str(_DEFAULT_TIMEOUT_MS))
+    raw = os.environ.get("AI_CONTEXT_CLI_FETCH_TIMEOUT", str(_DEFAULT_TIMEOUT_MS))
     try:
         ms = int(raw)
     except ValueError:

@@ -1,4 +1,4 @@
-"""Tests for :class:`~ai_context.infrastructure.fetchers.http_fetcher.HttpContentFetcher`."""
+"""Tests for :class:`~ai_context_cli.infrastructure.fetchers.http_fetcher.HttpContentFetcher`."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-from ai_context.domain.exceptions import NetworkError, UnsupportedFormatError
-from ai_context.infrastructure.fetchers.http_fetcher import HttpContentFetcher
+from ai_context_cli.domain.exceptions import NetworkError, UnsupportedFormatError
+from ai_context_cli.infrastructure.fetchers.http_fetcher import HttpContentFetcher
 
 
 def test_fetch_rejects_non_http_url() -> None:
@@ -30,7 +30,7 @@ def test_fetch_maps_http_500_to_network_error(httpx_mock: HTTPXMock) -> None:
 def test_fetch_succeeds_when_fetch_timeout_env_is_invalid(
     monkeypatch: pytest.MonkeyPatch, httpx_mock: HTTPXMock
 ) -> None:
-    monkeypatch.setenv("AI_CONTEXT_FETCH_TIMEOUT", "not-a-number")
+    monkeypatch.setenv("AI_CONTEXT_CLI_FETCH_TIMEOUT", "not-a-number")
     httpx_mock.add_response(url="https://example.com/page", text="<html/>")
     raw = HttpContentFetcher().fetch("https://example.com/page")
     assert raw.html == "<html/>"

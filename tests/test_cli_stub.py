@@ -6,18 +6,18 @@ import sys
 
 import pytest
 
-from ai_context.domain.ports import Summarizer
-from ai_context.infrastructure.extractors import StubContentExtractor
-from ai_context.infrastructure.fetchers import StubContentFetcher
-from ai_context.infrastructure.summarizers import ExtractiveSummarizer
-from ai_context.interfaces import cli as cli_module
-from ai_context.interfaces.cli import run_app
+from ai_context_cli.domain.ports import Summarizer
+from ai_context_cli.infrastructure.extractors import StubContentExtractor
+from ai_context_cli.infrastructure.fetchers import StubContentFetcher
+from ai_context_cli.infrastructure.summarizers import ExtractiveSummarizer
+from ai_context_cli.interfaces import cli as cli_module
+from ai_context_cli.interfaces.cli import run_app
 
 
 def test_cli_rejects_file_path_with_exit_code_4(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["ai-context", "./local.html"])
+    monkeypatch.setattr(sys, "argv", ["ai-context-cli", "./local.html"])
     with pytest.raises(SystemExit) as exc:
         run_app()
     assert exc.value.code == 4
@@ -26,7 +26,7 @@ def test_cli_rejects_file_path_with_exit_code_4(
 
 
 def test_cli_rejects_malformed_url_exit_code_2(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, "argv", ["ai-context", "https://"])
+    monkeypatch.setattr(sys, "argv", ["ai-context-cli", "https://"])
     with pytest.raises(SystemExit) as exc:
         run_app()
     assert exc.value.code == 2
@@ -49,7 +49,7 @@ def _cli_uses_stub_adapters(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_cli_stub_pipeline_stdout(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["ai-context", "https://example.com/article"])
+    monkeypatch.setattr(sys, "argv", ["ai-context-cli", "https://example.com/article"])
     with pytest.raises(SystemExit) as exc:
         run_app()
     assert exc.value.code == 0
@@ -65,7 +65,7 @@ def test_cli_summary_flag_includes_summary_block(
     monkeypatch.setattr(
         sys,
         "argv",
-        ["ai-context", "https://example.com/article", "--summary"],
+        ["ai-context-cli", "https://example.com/article", "--summary"],
     )
     with pytest.raises(SystemExit) as exc:
         run_app()
