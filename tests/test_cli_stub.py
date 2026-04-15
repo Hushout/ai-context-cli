@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -75,3 +77,54 @@ def test_cli_summary_flag_includes_summary_block(
     _body, summary_block = out.split("## Summary", maxsplit=1)
     assert "Fourth stub sentence" in _body  # full stub body still lists all sentences
     assert "Fourth stub sentence" not in summary_block
+
+
+def test_cli_writes_json_output_file(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    output_path = tmp_path / "exports" / "result.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ai-context-cli",
+            "https://example.com/article",
+            "--format",
+            "json",
+            "--output",
+            str(output_path),
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        run_app()
+    assert exc.value.code == 0
+    assert capsys.readouterr().out == ""
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["source"] == "https://example.com/article"
+    assert "markdown" in payload
+    assert "meta" in payload
+
+
+def test_cli_warns_and_adapts_when_extension_conflicts_with_format(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    output_path = tmp_path / "result.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ai-context-cli",
+            "https://example.com/article",
+            "--format",
+            "markdown",
+            "--output",
+            str(output_path),
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        run_app()
+    assert exc.value.code == 0
+    err = capsys.readouterr().err
+    assert "Warning:" in err
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["source"] == "https://example.com/article"
