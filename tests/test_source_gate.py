@@ -61,7 +61,6 @@ def test_normalize_empty_source_raises() -> None:
 
 
 def test_normalize_https_same_as_validate() -> None:
-    assert (
-        normalize_command_source("  https://example.com/x  ")
-        == validate_http_url_command_source("  https://example.com/x  ")
-    )
+    assert normalize_command_source(
+        "  https://example.com/x  "
+    ) == validate_http_url_command_source("  https://example.com/x  ")

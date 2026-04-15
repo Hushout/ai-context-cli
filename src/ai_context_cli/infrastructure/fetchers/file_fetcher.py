@@ -59,8 +59,8 @@ def _wrap_as_article_html(*, document_title: str, body: str) -> str:
     safe_title = html.escape(document_title, quote=True)
     safe_body = html.escape(body, quote=False)
     return (
-        "<!DOCTYPE html><html lang=\"en\"><head>"
-        f"<meta charset=\"utf-8\"/><title>{safe_title}</title></head><body>"
+        '<!DOCTYPE html><html lang="en"><head>'
+        f'<meta charset="utf-8"/><title>{safe_title}</title></head><body>'
         f"<article><h1>{safe_title}</h1><pre><code>{safe_body}</code></pre></article>"
         "</body></html>"
     )
@@ -68,8 +68,8 @@ def _wrap_as_article_html(*, document_title: str, body: str) -> str:
 
 def _wrap_directory_html(sections: list[tuple[str, str]]) -> str:
     pieces: list[str] = [
-        "<!DOCTYPE html><html lang=\"en\"><head>",
-        "<meta charset=\"utf-8\"/><title>Aggregated sources</title></head><body>",
+        '<!DOCTYPE html><html lang="en"><head>',
+        '<meta charset="utf-8"/><title>Aggregated sources</title></head><body>',
     ]
     for rel, body in sections:
         safe_rel = html.escape(rel, quote=True)
@@ -86,11 +86,7 @@ def _should_skip_path(path: Path, root: Path) -> bool:
         rel = path.relative_to(root)
     except ValueError:
         return True
-    if any(part.startswith(".") for part in rel.parts):
-        return True
-    if "__pycache__" in rel.parts:
-        return True
-    return False
+    return any(part.startswith(".") for part in rel.parts) or "__pycache__" in rel.parts
 
 
 def _iter_candidate_files(root: Path) -> list[Path]:

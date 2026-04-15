@@ -26,7 +26,7 @@ Raw HTML wastes tokens. `ai-context-cli` is a small preprocessing step: one URL 
 - **Optional LLM summary** via LiteLLM (`--summary`, `--model`)
 - **Typed errors** → stable CLI exit codes (see [SPEC.md](SPEC.md) §7)
 
-**Scope today:** `SOURCE` must be an **http(s) URL**. Local files and extra output formats are **planned** (see SPEC §5).
+**Scope today:** `SOURCE` is an **http(s) URL** or a **local file or directory** (UTF-8 text; see SPEC §5). `--structure` / `--version` remain planned.
 
 ## 📦 Install
 

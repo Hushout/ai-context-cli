@@ -21,7 +21,7 @@ MARKDOWN_TRUNCATION_FOOTER = "\n\n[... Contenu tronqué par ai-context-cli ...]\
 
 
 def estimate_tokens_from_text(text: str) -> int:
-    """Rough token budget using the same heuristic as :class:`~ai_context_cli.domain.models.ContentMeta`.
+    """Rough token budget (same heuristic as :class:`~ai_context_cli.domain.models.ContentMeta`).
 
     Uses ``max(len(text) // 4, word_count)`` to stay aligned with SPEC (chars / 4).
     """
