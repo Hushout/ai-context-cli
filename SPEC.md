@@ -72,11 +72,13 @@ ai-context-cli [OPTIONS] SOURCE
 | `--summary` / `--no-summary` | `bool` | `False` | Ajouter un résumé **LLM** (LiteLLM). Défaut du modèle : `gpt-4o-mini` (OpenAI) si `--model` est omis. | **Implemented** |
 | `--model` | `str` | *défaut OpenAI* | Identifiant LiteLLM (`gpt-4o-mini`, `anthropic/claude-3-5-sonnet-latest`, `openrouter/...`, `ollama/llama3`, …). | **Implemented** |
 | `--verbose`, `-v` | `bool` | `False` | Journaliser les étapes du pipeline sur stderr (Rich). | **Implemented** |
-| `--output`, `-o` | `Path` | stdout | Chemin de sortie | **Planned v1.x** |
-| `--format`, `-f` | `markdown\|json\|yaml\|all` | `markdown` | Format de sortie | **Planned v1.x** |
+| `--output`, `-o` | `Path` | stdout | Écrire le résultat dans un fichier local (création auto du dossier parent). | **Implemented** |
+| `--format`, `-f` | `markdown\|json\|plain` | `markdown` | Format de sortie. Si l’extension de `--output` contredit `--format`, un avertissement est affiché et l’extension du fichier est prioritaire. | **Implemented** |
 | `--structure` / `--no-structure` | `bool` | `False` | Ajouter la structure IA | **Planned v1.x** |
 | `--max-tokens` | `int` | — | Tronquer la sortie à ~N tokens | **Planned v1.x** |
 | `--version` | | | Afficher la version et quitter | **Planned v1.x** |
+
+Quand `--format json` est utilisé, la sortie suit le contrat `ProcessedContent` (clés `source`, `title`, `markdown`, `summary`, `structure`, `meta`).
 
 ### Exemples
 
@@ -90,10 +92,14 @@ ai-context-cli https://example.com/article --summary --verbose
 # Anthropic explicite
 # ai-context-cli https://example.com/article --summary --model anthropic/claude-3-5-sonnet-latest
 
-# Exemples cibles v1.x (options non encore câblées dans le CLI)
-# ai-context-cli https://example.com/article --format all -o ./output/
-# ai-context-cli ./page.html --format markdown --summary
-# ai-context-cli https://example.com --format json | jq '.meta.estimatedTokens'
+# Écriture fichier + format explicite
+ai-context-cli https://example.com/article --format json --output ./output/result.json
+
+# Conflit format/extension : avertissement, extension prioritaire (.json)
+ai-context-cli https://example.com/article --format markdown --output ./output/result.json
+
+# JSON machine-readable (schéma basé sur ProcessedContent)
+ai-context-cli https://example.com --format json | jq '.meta.estimated_tokens'
 ```
 
 ---
@@ -248,9 +254,9 @@ Implémentations concrètes des ports.
 | `summarizers/litellm_summarizer.py` | `Summarizer` | `litellm` (**import lazy** dans `summarize`) |
 | `processors/structure_analyzer.py` | — | parsing Markdown natif |
 | `formatters/markdown_formatter.py` | `OutputFormatter` | — |
-| `formatters/json_formatter.py` | `OutputFormatter` | Pydantic `.model_dump_json()` |
-| `formatters/yaml_formatter.py` | `OutputFormatter` | `pyyaml` |
-| `formatters/all_formatter.py` | `OutputFormatter` | Combine les trois |
+| `formatters/json_formatter.py` | `OutputFormatter` | `json` (stdlib) + `ProcessedContent.model_dump(mode="json")` |
+| `formatters/plain_formatter.py` | `OutputFormatter` | Normalisation texte (regex légère) |
+| `io/file_writer.py` | — | `pathlib` (`mkdir(parents=True)`, UTF-8) |
 
 **HTTP fetcher (implémenté, v1)** — `HttpContentFetcher` dans `fetchers/http_fetcher.py` :
 
@@ -376,9 +382,11 @@ ai-context-cli/
 │       │   └── formatters/
 │       │       ├── __init__.py
 │       │       ├── markdown_formatter.py
-│       │       ├── json_formatter.py      # Via Pydantic .model_dump_json()
-│       │       ├── yaml_formatter.py
-│       │       └── all_formatter.py
+│       │       ├── json_formatter.py      # json stdlib + model_dump(mode="json")
+│       │       └── plain_formatter.py
+│       │   └── io/
+│       │       ├── __init__.py
+│       │       └── file_writer.py         # mkdir(parents=True) + write_text UTF-8
 │       │
 │       ├── interfaces/                    # Couche la plus mince
 │       │   ├── __init__.py
