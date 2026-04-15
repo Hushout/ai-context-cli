@@ -11,7 +11,11 @@ from datetime import UTC, datetime
 from ai_context_cli.domain.exceptions import SummarizerConfigurationError
 from ai_context_cli.domain.models import ContentMeta, ProcessedContent
 from ai_context_cli.domain.ports import ContentExtractor, ContentFetcher, Summarizer
-from ai_context_cli.utils.plain_text import html_to_plain_text_stub
+from ai_context_cli.utils.plain_text import (
+    estimate_tokens_from_text,
+    html_to_plain_text_stub,
+    truncate_markdown_to_token_budget,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +26,8 @@ class ProcessSourceCommand:
 
     source: str
     include_summary: bool = False
+    max_tokens: int | None = None
+    verbose: bool = False
 
 
 class ProcessSourceUseCase:
@@ -61,9 +67,16 @@ class ProcessSourceUseCase:
             summary = self._summarizer.summarize(plain)
             logger.info("Summary enabled (injected Summarizer)")
 
-        words = plain.split()
+        markdown, truncated = truncate_markdown_to_token_budget(markdown, cmd.max_tokens)
+        if truncated and cmd.verbose:
+            logger.warning(
+                "Markdown output was truncated to approximately %s tokens (--max-tokens).",
+                cmd.max_tokens,
+            )
+
+        words = markdown.split()
         word_count = len(words)
-        estimated_tokens = max(len(plain) // 4, word_count)
+        estimated_tokens = estimate_tokens_from_text(markdown)
 
         elapsed_ms = int((time.perf_counter() - started) * 1000)
         meta = ContentMeta(
