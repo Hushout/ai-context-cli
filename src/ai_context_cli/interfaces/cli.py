@@ -12,7 +12,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from ai_context_cli.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
-from ai_context_cli.application.source_gate import validate_http_url_command_source
+from ai_context_cli.application.source_gate import normalize_command_source
 from ai_context_cli.domain.exceptions import AiContextError
 from ai_context_cli.domain.models import (
     OutputConfig,
@@ -20,9 +20,9 @@ from ai_context_cli.domain.models import (
     ProcessedContent,
     resolve_output_format,
 )
-from ai_context_cli.domain.ports import OutputFormatter, Summarizer
+from ai_context_cli.domain.ports import ContentFetcher, OutputFormatter, Summarizer
 from ai_context_cli.infrastructure.extractors import ReadabilityExtractor
-from ai_context_cli.infrastructure.fetchers import HttpContentFetcher
+from ai_context_cli.infrastructure.fetchers import FileContentFetcher, HttpContentFetcher
 from ai_context_cli.infrastructure.formatters import (
     JsonFormatter,
     MarkdownFormatter,
@@ -92,7 +92,10 @@ def _render_stdout(text: str) -> None:
 
 
 def main(
-    source: Annotated[str, typer.Argument(help="HTTP(S) URL to fetch and convert to Markdown.")],
+    source: Annotated[
+        str,
+        typer.Argument(help="HTTP(S) URL or path to a local file or directory to convert."),
+    ],
     summary: Annotated[
         bool,
         typer.Option(
@@ -122,14 +125,22 @@ def main(
         OutputFormat,
         typer.Option("--format", "-f", help="Output format: markdown, json, or plain."),
     ] = "markdown",
+    max_tokens: Annotated[
+        int | None,
+        typer.Option(
+            "--max-tokens",
+            min=1,
+            help="Truncate Markdown output to roughly this many tokens (approximate).",
+        ),
+    ] = None,
 ) -> None:
-    """Transform an HTTP(S) URL through fetch -> Readability -> Markdown."""
+    """Transform a URL or local source through fetch -> Readability -> Markdown."""
 
     if verbose:
         _configure_verbose_logging()
 
     try:
-        normalized = validate_http_url_command_source(source)
+        normalized = normalize_command_source(source)
     except AiContextError as exc:
         _handle_domain_error(exc)
 
@@ -147,13 +158,24 @@ def main(
     if resolved.warning is not None:
         _err.print(f"[yellow]Warning:[/yellow] {resolved.warning}")
 
+    fetcher: ContentFetcher
+    if normalized.startswith(("http://", "https://")):
+        fetcher = HttpContentFetcher()
+    else:
+        fetcher = FileContentFetcher()
+
     use_case = ProcessSourceUseCase(
-        fetcher=HttpContentFetcher(),
+        fetcher=fetcher,
         extractor=ReadabilityExtractor(),
         html_to_markdown=html_fragment_to_markdown,
         summarizer=summarizer,
     )
-    command = ProcessSourceCommand(source=normalized, include_summary=summary)
+    command = ProcessSourceCommand(
+        source=normalized,
+        include_summary=summary,
+        max_tokens=max_tokens,
+        verbose=verbose,
+    )
 
     try:
         result = use_case.execute(command)

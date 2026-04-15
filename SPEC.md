@@ -61,21 +61,21 @@ ai-context-cli [OPTIONS] SOURCE
 
 **Portée actuelle du dépôt** : seules certaines lignes du tableau ci-dessous sont implémentées. La colonne **Status** indique ce qui existe réellement dans `interfaces/cli.py` par rapport à la feuille de route v1.
 
-`SOURCE` est aujourd’hui **uniquement** une URL HTTP(S) (`https://...`). Les chemins de fichier locaux et les autres schémas relèvent de **Planned v1.x** (voir `source_gate` et tickets associés).
+`SOURCE` peut être une **URL HTTP(S)** ou un **chemin local** (fichier texte UTF-8 ou répertoire dont les fichiers texte sont agrégés). Les autres schémas d’URL (`file:`, etc.) restent refusés (voir `normalize_command_source` / `validate_http_url_command_source`).
 
 ### Options
 
 | Option / entrée | Type | Défaut | Description | Status |
 |-----------------|------|--------|-------------|--------|
 | `--url` | — | — | **Pas de flag `--url` en ligne de commande.** L’URL est passée comme argument positionnel `SOURCE` (ex. `ai-context-cli "https://…"`). Capacité « URL en entrée » : **Implemented** via `SOURCE`. | **Implemented** |
-| `SOURCE` | `str` | *requis* | URL HTTP(S) à récupérer et convertir en Markdown (argument positionnel Typer). | **Implemented** |
+| `SOURCE` | `str` | *requis* | URL HTTP(S) ou chemin local (fichier / dossier) à convertir en Markdown (argument positionnel Typer). | **Implemented** |
 | `--summary` / `--no-summary` | `bool` | `False` | Ajouter un résumé **LLM** (LiteLLM). Défaut du modèle : `gpt-4o-mini` (OpenAI) si `--model` est omis. | **Implemented** |
 | `--model` | `str` | *défaut OpenAI* | Identifiant LiteLLM (`gpt-4o-mini`, `anthropic/claude-3-5-sonnet-latest`, `openrouter/...`, `ollama/llama3`, …). | **Implemented** |
 | `--verbose`, `-v` | `bool` | `False` | Journaliser les étapes du pipeline sur stderr (Rich). | **Implemented** |
 | `--output`, `-o` | `Path` | stdout | Écrire le résultat dans un fichier local (création auto du dossier parent). | **Implemented** |
 | `--format`, `-f` | `markdown\|json\|plain` | `markdown` | Format de sortie. Si l’extension de `--output` contredit `--format`, un avertissement est affiché et l’extension du fichier est prioritaire. | **Implemented** |
 | `--structure` / `--no-structure` | `bool` | `False` | Ajouter la structure IA | **Planned v1.x** |
-| `--max-tokens` | `int` | — | Tronquer la sortie à ~N tokens | **Planned v1.x** |
+| `--max-tokens` | `int` | — | Tronquer le champ `markdown` à ~N tokens (heuristique ; voir `utils/plain_text`) | **Implemented** |
 | `--version` | | | Afficher la version et quitter | **Planned v1.x** |
 
 Quand `--format json` est utilisé, la sortie suit le contrat `ProcessedContent` (clés `source`, `title`, `markdown`, `summary`, `structure`, `meta`).
@@ -100,6 +100,9 @@ ai-context-cli https://example.com/article --format markdown --output ./output/r
 
 # JSON machine-readable (schéma basé sur ProcessedContent)
 ai-context-cli https://example.com --format json | jq '.meta.estimated_tokens'
+
+# Fichier local + limite de tokens (approximatif)
+ai-context-cli ./src/module.py --max-tokens 4000
 ```
 
 ---
@@ -225,8 +228,9 @@ from collections.abc import Callable
 class ProcessSourceCommand:
     source: str
     include_summary: bool = False
-    include_structure: bool = False
+    include_structure: bool = False  # Planned — pas encore dans le CLI
     max_tokens: int | None = None
+    verbose: bool = False  # utilisé pour journaliser la troncature
 
 class ProcessSourceUseCase:
     def __init__(
@@ -266,6 +270,12 @@ Implémentations concrètes des ports.
 - En-tête **User-Agent** explicite (chaîne du projet) pour limiter les blocages triviaux.
 - Toute réponse **non 2xx** (dont **404** et **500**), ainsi que timeouts et erreurs de transport, est mappée vers `NetworkError` (cause d’origine conservée quand c’est pertinent).
 
+**File fetcher (implémenté, v1.x)** — `FileContentFetcher` dans `fetchers/file_fetcher.py` :
+
+- Lecture via `pathlib` ; taille max par fichier contrôlée par `AI_CONTEXT_CLI_MAX_CONTENT_SIZE` (défaut 2 Mo, §8) — pas de chargement entier d’un fichier dépassant la limite.
+- Répertoire : fichiers texte UTF-8 triés, exclusion des chemins cachés (`.*`, `__pycache__`), fichiers manifestement binaires ignorés ; agrégat HTML minimal pour Readability.
+- Le texte brut est encapsulé dans un HTML article (`<pre><code>`) pour réutiliser `ReadabilityExtractor` sans second extracteur.
+
 ### 6.5 Interface Layer — `src/ai_context_cli/interfaces/`
 
 CLI Typer. Responsabilité unique : parser les arguments, construire le use case avec les bons adaptateurs, afficher le résultat.
@@ -276,17 +286,18 @@ CLI Typer. Responsabilité unique : parser les arguments, construire le use case
 import typer
 
 def main(
-    source: str = typer.Argument(..., help="URL HTTP(S)"),
+    source: str = typer.Argument(..., help="URL HTTP(S) ou chemin local"),
     summary: bool = typer.Option(False, "--summary/--no-summary"),
     model: str | None = typer.Option(None, "--model"),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
+    max_tokens: int | None = typer.Option(None, "--max-tokens", min=1),
 ) -> None: ...
 
 def run_app() -> None:
     typer.run(main)  # script d’entrée paquet : ai_context_cli.interfaces.cli:run_app
 ```
 
-Les options `--output`, `--format`, `--structure`, `--max-tokens` restent **Planned v1.x** (voir tableau §5).
+Les options `--output`, `--format` et `--max-tokens` sont **Implemented** (voir tableau §5). `--structure` / `--version` restent **Planned v1.x**.
 
 ---
 
@@ -466,4 +477,4 @@ target-version = "py311"
 
 ---
 
-*Dernière mise à jour : 2026-04-12*
+*Dernière mise à jour : 2026-04-16*
