@@ -14,11 +14,20 @@ from rich.logging import RichHandler
 from ai_context_cli.application.process_source import ProcessSourceCommand, ProcessSourceUseCase
 from ai_context_cli.application.source_gate import validate_http_url_command_source
 from ai_context_cli.domain.exceptions import AiContextError
-from ai_context_cli.domain.models import OutputConfig, OutputFormat, ProcessedContent, resolve_output_format
+from ai_context_cli.domain.models import (
+    OutputConfig,
+    OutputFormat,
+    ProcessedContent,
+    resolve_output_format,
+)
 from ai_context_cli.domain.ports import OutputFormatter, Summarizer
 from ai_context_cli.infrastructure.extractors import ReadabilityExtractor
 from ai_context_cli.infrastructure.fetchers import HttpContentFetcher
-from ai_context_cli.infrastructure.formatters import JsonFormatter, MarkdownFormatter, PlainFormatter
+from ai_context_cli.infrastructure.formatters import (
+    JsonFormatter,
+    MarkdownFormatter,
+    PlainFormatter,
+)
 from ai_context_cli.infrastructure.io import FileWriter
 from ai_context_cli.infrastructure.processors.markdown_converter import html_fragment_to_markdown
 
@@ -154,7 +163,11 @@ def main(
     _write_output(result=result, output=output, target_format=resolved.format)
 
 
-def _write_output(result: ProcessedContent, output: Path | None, target_format: OutputFormat) -> None:
+def _write_output(
+    result: ProcessedContent,
+    output: Path | None,
+    target_format: OutputFormat,
+) -> None:
     formatter = _build_output_formatter(target_format)
     rendered = formatter.format(result)
     if output is None:

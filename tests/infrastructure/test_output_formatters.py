@@ -6,7 +6,11 @@ import json
 from datetime import UTC, datetime
 
 from ai_context_cli.domain.models import ContentMeta, ProcessedContent
-from ai_context_cli.infrastructure.formatters import JsonFormatter, MarkdownFormatter, PlainFormatter
+from ai_context_cli.infrastructure.formatters import (
+    JsonFormatter,
+    MarkdownFormatter,
+    PlainFormatter,
+)
 
 
 def _processed_content() -> ProcessedContent:
