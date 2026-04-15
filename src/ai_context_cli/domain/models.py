@@ -8,7 +8,7 @@ across layers without defensive copying.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -18,6 +18,14 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 HeadingLevel = Annotated[int, Field(ge=1, le=6, description="HTML heading depth (1–6)")]
 NonNegativeInt = Annotated[int, Field(ge=0)]
+OutputFormat = Literal["markdown", "json", "plain"]
+
+_EXTENSION_TO_FORMAT: dict[str, OutputFormat] = {
+    ".json": "json",
+    ".md": "markdown",
+    ".markdown": "markdown",
+    ".txt": "plain",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +109,51 @@ class ContentMeta(BaseModel):
     )
     extracted_at: datetime = Field(description="UTC timestamp of extraction")
     processing_ms: NonNegativeInt = Field(description="Total pipeline duration in milliseconds")
+
+
+class OutputConfig(BaseModel):
+    """User-facing output preferences independent from infrastructure."""
+
+    model_config = ConfigDict(frozen=True)
+
+    output_path: str | None = Field(default=None, description="Target output file path")
+    format: OutputFormat = Field(default="markdown", description="Desired serialization format")
+
+
+class ResolvedOutputConfig(BaseModel):
+    """Result of output configuration arbitration."""
+
+    model_config = ConfigDict(frozen=True)
+
+    format: OutputFormat
+    warning: str | None = None
+
+
+def resolve_output_format(
+    output_path: str | None,
+    requested_format: OutputFormat,
+) -> ResolvedOutputConfig:
+    """Resolve effective output format and warning for extension mismatches."""
+
+    if output_path is None:
+        return ResolvedOutputConfig(format=requested_format, warning=None)
+
+    suffix = output_path.lower().rsplit(".", maxsplit=1)
+    if len(suffix) == 1:
+        return ResolvedOutputConfig(format=requested_format, warning=None)
+
+    extension = f".{suffix[1]}"
+    inferred = _EXTENSION_TO_FORMAT.get(extension)
+    if inferred is None:
+        return ResolvedOutputConfig(format=requested_format, warning=None)
+    if inferred == requested_format:
+        return ResolvedOutputConfig(format=requested_format, warning=None)
+
+    warning = (
+        f"Requested --format '{requested_format}' conflicts with output extension "
+        f"'{extension}'. Using '{inferred}'."
+    )
+    return ResolvedOutputConfig(format=inferred, warning=warning)
 
 
 class ProcessedContent(BaseModel):
