@@ -16,15 +16,29 @@ from ai_context_cli.interfaces import cli as cli_module
 from ai_context_cli.interfaces.cli import run_app
 
 
-def test_cli_rejects_file_path_with_exit_code_4(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+def test_cli_missing_local_path_exit_code_3(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["ai-context-cli", "./local.html"])
+    missing = tmp_path / "does-not-exist.html"
+    monkeypatch.setattr(sys, "argv", ["ai-context-cli", str(missing)])
     with pytest.raises(SystemExit) as exc:
         run_app()
-    assert exc.value.code == 4
+    assert exc.value.code == 3
     err = capsys.readouterr().err
     assert "Error:" in err
+
+
+def test_cli_accepts_local_file_path(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    path = tmp_path / "sample.py"
+    path.write_text("# local file", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["ai-context-cli", str(path)])
+    with pytest.raises(SystemExit) as exc:
+        run_app()
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert "# Stub document" in out
 
 
 def test_cli_rejects_malformed_url_exit_code_2(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -39,6 +53,7 @@ def _cli_uses_stub_adapters(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep CLI tests deterministic (no outbound HTTP or LLM)."""
 
     monkeypatch.setattr(cli_module, "HttpContentFetcher", StubContentFetcher)
+    monkeypatch.setattr(cli_module, "FileContentFetcher", StubContentFetcher)
     monkeypatch.setattr(cli_module, "ReadabilityExtractor", StubContentExtractor)
 
     def _stub_summarizer(_model: str) -> Summarizer:
