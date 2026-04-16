@@ -12,7 +12,10 @@ from ai_context_cli.domain.models import ExtractedContent, RawContent
 from ai_context_cli.domain.ports import ContentExtractor
 from ai_context_cli.infrastructure.extractors import StubContentExtractor
 from ai_context_cli.infrastructure.fetchers import StubContentFetcher
-from ai_context_cli.infrastructure.processors.markdown_converter import html_fragment_to_markdown
+from ai_context_cli.infrastructure.processors import (
+    analyze_markdown_structure,
+    html_fragment_to_markdown,
+)
 from ai_context_cli.infrastructure.summarizers import ExtractiveSummarizer
 from ai_context_cli.utils.plain_text import MARKDOWN_TRUNCATION_FOOTER
 
@@ -78,3 +81,18 @@ def test_execute_with_summary_requires_summarizer() -> None:
     )
     with pytest.raises(SummarizerConfigurationError):
         uc.execute(ProcessSourceCommand(source="https://example.com/a", include_summary=True))
+
+
+def test_execute_populates_structure_when_enabled() -> None:
+    uc = ProcessSourceUseCase(
+        fetcher=StubContentFetcher(),
+        extractor=StubContentExtractor(),
+        html_to_markdown=html_fragment_to_markdown,
+        markdown_structure_analyzer=analyze_markdown_structure,
+    )
+    result = uc.execute(
+        ProcessSourceCommand(source="https://example.com/a", include_structure=True),
+    )
+    assert result.structure is not None
+    assert result.structure.title == "Stub document"
+    assert result.structure.sections[0].heading == "Stub document"
