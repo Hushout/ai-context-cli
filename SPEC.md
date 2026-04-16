@@ -76,7 +76,7 @@ ai-context-cli [OPTIONS] SOURCE
 | `--format`, `-f` | `markdown\|json\|plain` | `markdown` | Format de sortie. Si l’extension de `--output` contredit `--format`, un avertissement est affiché et l’extension du fichier est prioritaire. | **Implemented** |
 | `--structure` / `--no-structure` | `bool` | `False` | Activer l’analyse de structure (`h1/h2/h3`) ; remplit `structure` en JSON et insère une TOC en tête de la sortie markdown. | **Implemented** |
 | `--max-tokens` | `int` | — | Tronquer le champ `markdown` à ~N tokens (heuristique ; voir `utils/plain_text`) | **Implemented** |
-| `--version` | | | Afficher la version et quitter | **Planned v1.x** |
+| `--version` | | | Afficher la version et quitter | **Implemented** |
 
 Quand `--format json` est utilisé, la sortie suit le contrat `ProcessedContent` (clés `source`, `title`, `markdown`, `summary`, `structure`, `meta`).
 
@@ -301,7 +301,7 @@ def run_app() -> None:
     typer.run(main)  # script d’entrée paquet : ai_context_cli.interfaces.cli:run_app
 ```
 
-Les options `--output`, `--format`, `--max-tokens` et `--structure` sont **Implemented** (voir tableau §5). `--version` reste **Planned v1.x**.
+Les options `--output`, `--format`, `--max-tokens`, `--structure` et `--version` sont **Implemented** (voir tableau §5).
 
 ---
 
@@ -446,7 +446,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ai-context-cli"
-version = "0.1.0"
+version = "1.0.0"
 requires-python = ">=3.11"
 dependencies = [
     "typer[all]>=0.12",        # [all] inclut rich
