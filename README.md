@@ -1,5 +1,9 @@
 # ai-context-cli
 
+[![PyPI version](https://img.shields.io/pypi/v/ai-context-cli.svg)](https://pypi.org/project/ai-context-cli/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ai-context-cli.svg)](https://pypi.org/project/ai-context-cli/)
+[![License](https://img.shields.io/github/license/Hushout/ai-context-cli.svg)](https://github.com/Hushout/ai-context-cli/blob/main/LICENSE)
+
 **HTTP(S) → clean Markdown** for LLM context: `httpx` fetch → Readability → `markdownify`; optional **LiteLLM** summary with `--summary` (lazy-loaded — no LLM stack until you opt in).
 
 ```bash
@@ -26,7 +30,23 @@ Raw HTML wastes tokens. `ai-context-cli` is a small preprocessing step: one URL 
 - **Optional LLM summary** via LiteLLM (`--summary`, `--model`)
 - **Typed errors** → stable CLI exit codes (see [SPEC.md](SPEC.md) §7)
 
-**Scope today:** `SOURCE` is an **http(s) URL** or a **local file or directory** (UTF-8 text; see SPEC §5). `--structure` / `--version` remain planned.
+**Scope today:** `SOURCE` is an **http(s) URL** or a **local file or directory** (UTF-8 text; see SPEC §5). `--structure` and `--version` are available.
+
+## Quick Start
+
+```bash
+# 1) Install
+pip install ai-context-cli
+
+# 2) Convert a page to Markdown
+ai-context-cli "https://example.com/article"
+
+# 3) Show installed version
+ai-context-cli --version
+
+# 4) Add a summary block
+ai-context-cli "https://example.com/article" --summary
+```
 
 ## 📦 Install
 
@@ -40,7 +60,7 @@ pip install -e ".[dev]"
 ai-context-cli --help
 ```
 
-**From PyPI** (once published): [pip install ai-context-cli](https://pypi.org/project/ai-context-cli/0.1.0/)
+**From PyPI:** [pip install ai-context-cli](https://pypi.org/project/ai-context-cli/)
 
 Requires **Python 3.11+**.
 
@@ -74,6 +94,10 @@ mypy src
 ## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) (layers, ports/adapters, where to put code).
+
+## 📝 Changelog
+
+Release notes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## 📄 License
 
