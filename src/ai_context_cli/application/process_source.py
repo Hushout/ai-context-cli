@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from ai_context_cli.domain.exceptions import SummarizerConfigurationError
-from ai_context_cli.domain.models import ContentMeta, ProcessedContent
+from ai_context_cli.domain.models import ContentMeta, ContentStructure, ProcessedContent
 from ai_context_cli.domain.ports import ContentExtractor, ContentFetcher, Summarizer
 from ai_context_cli.utils.plain_text import (
     estimate_tokens_from_text,
@@ -26,6 +26,7 @@ class ProcessSourceCommand:
 
     source: str
     include_summary: bool = False
+    include_structure: bool = False
     max_tokens: int | None = None
     verbose: bool = False
 
@@ -39,11 +40,13 @@ class ProcessSourceUseCase:
         extractor: ContentExtractor,
         html_to_markdown: Callable[[str], str],
         summarizer: Summarizer | None = None,
+        markdown_structure_analyzer: Callable[[str, str], ContentStructure] | None = None,
     ) -> None:
         self._fetcher = fetcher
         self._extractor = extractor
         self._html_to_markdown = html_to_markdown
         self._summarizer = summarizer
+        self._markdown_structure_analyzer = markdown_structure_analyzer
 
     def execute(self, cmd: ProcessSourceCommand) -> ProcessedContent:
         started = time.perf_counter()
@@ -73,6 +76,9 @@ class ProcessSourceUseCase:
                 "Markdown output was truncated to approximately %s tokens (--max-tokens).",
                 cmd.max_tokens,
             )
+        structure: ContentStructure | None = None
+        if cmd.include_structure and self._markdown_structure_analyzer is not None:
+            structure = self._markdown_structure_analyzer(markdown, title)
 
         words = markdown.split()
         word_count = len(words)
@@ -92,6 +98,6 @@ class ProcessSourceUseCase:
             title=title,
             markdown=markdown,
             summary=summary,
-            structure=None,
+            structure=structure,
             meta=meta,
         )
