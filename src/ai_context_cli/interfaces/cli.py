@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Annotated, NoReturn
 
@@ -37,6 +38,17 @@ from ai_context_cli.infrastructure.processors import (
 _err = Console(stderr=True, highlight=False)
 
 _DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+
+
+def _version_callback(show_version: bool) -> None:
+    if not show_version:
+        return
+    try:
+        resolved_version = version("ai-context-cli")
+    except PackageNotFoundError:
+        resolved_version = "0.0.0+unknown"
+    typer.echo(resolved_version)
+    raise typer.Exit()
 
 
 def _configure_verbose_logging() -> None:
@@ -143,6 +155,15 @@ def main(
             help="Truncate Markdown output to roughly this many tokens (approximate).",
         ),
     ] = None,
+    show_version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            callback=_version_callback,
+            is_eager=True,
+            help="Show ai-context-cli version and exit.",
+        ),
+    ] = False,
 ) -> None:
     """Transform a URL or local source through fetch -> Readability -> Markdown."""
 
