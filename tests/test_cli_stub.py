@@ -16,6 +16,17 @@ from ai_context_cli.interfaces import cli as cli_module
 from ai_context_cli.interfaces.cli import run_app
 
 
+def test_cli_version_flag_prints_version_and_exits(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["ai-context-cli", "--version"])
+    with pytest.raises(SystemExit) as exc:
+        run_app()
+    assert exc.value.code == 0
+    out = capsys.readouterr().out.strip()
+    assert out
+
+
 def test_cli_missing_local_path_exit_code_3(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:

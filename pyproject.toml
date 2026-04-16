@@ -7,9 +7,9 @@ build-backend = "hatchling.build"
 # ---------------------------------------------------------------------------
 [project]
 name = "ai-context-cli"
-version = "0.1.0"
+version = "1.0.0"
 description = "CLI: HTTP(S) or local file/dir → Readability → Markdown; optional LiteLLM summary; optional --max-tokens truncation."
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "CAO Anh (Lam)" }]

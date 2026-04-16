@@ -15,7 +15,7 @@ _CLOSING_MARKERS_RE = re.compile(r"\s+#+\s*$")
 class _SectionNode:
     heading: str
     level: int
-    children: list["_SectionNode"] = field(default_factory=list)
+    children: list[_SectionNode] = field(default_factory=list)
 
 
 def _clean_heading_text(raw_heading: str) -> str:

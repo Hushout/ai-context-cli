@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from importlib.metadata import PackageNotFoundError, version
 from typing import Final
 
 import httpx
@@ -12,9 +13,17 @@ from ai_context_cli.domain.models import RawContent
 from ai_context_cli.domain.ports import ContentFetcher
 
 _DEFAULT_TIMEOUT_MS: Final[int] = 10_000
-_DEFAULT_USER_AGENT: Final[str] = (
-    "ai-context-cli/0.1.0 (+https://github.com/Hushout/ai-context-cli; readability pipeline)"
-)
+
+
+def _default_user_agent() -> str:
+    try:
+        package_version = version("ai-context-cli")
+    except PackageNotFoundError:
+        package_version = "0.0.0+unknown"
+    return (
+        f"ai-context-cli/{package_version} "
+        "(+https://github.com/Hushout/ai-context-cli; readability pipeline)"
+    )
 
 
 def _timeout_seconds() -> float:
@@ -32,10 +41,10 @@ class HttpContentFetcher(ContentFetcher):
     def __init__(
         self,
         *,
-        user_agent: str = _DEFAULT_USER_AGENT,
+        user_agent: str | None = None,
         timeout_seconds: float | None = None,
     ) -> None:
-        self._user_agent = user_agent
+        self._user_agent = _default_user_agent() if user_agent is None else user_agent
         self._timeout = timeout_seconds if timeout_seconds is not None else _timeout_seconds()
 
     def fetch(self, source: str) -> RawContent:
