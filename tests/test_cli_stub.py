@@ -94,6 +94,22 @@ def test_cli_summary_flag_includes_summary_block(
     assert "Fourth stub sentence" not in summary_block
 
 
+def test_cli_structure_flag_includes_table_of_contents(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["ai-context-cli", "https://example.com/article", "--structure"],
+    )
+    with pytest.raises(SystemExit) as exc:
+        run_app()
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert "## Table of Contents" in out
+    assert "- [Stub document](#stub-document)" in out
+
+
 def test_cli_writes_json_output_file(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
@@ -118,6 +134,32 @@ def test_cli_writes_json_output_file(
     assert payload["source"] == "https://example.com/article"
     assert "markdown" in payload
     assert "meta" in payload
+
+
+def test_cli_structure_flag_populates_json_structure(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    output_path = tmp_path / "exports" / "result.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ai-context-cli",
+            "https://example.com/article",
+            "--structure",
+            "--format",
+            "json",
+            "--output",
+            str(output_path),
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        run_app()
+    assert exc.value.code == 0
+    assert capsys.readouterr().out == ""
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["structure"] is not None
+    assert payload["structure"]["title"] == "Stub document"
 
 
 def test_cli_warns_and_adapts_when_extension_conflicts_with_format(

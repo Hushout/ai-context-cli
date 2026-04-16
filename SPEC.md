@@ -74,7 +74,7 @@ ai-context-cli [OPTIONS] SOURCE
 | `--verbose`, `-v` | `bool` | `False` | Journaliser les étapes du pipeline sur stderr (Rich). | **Implemented** |
 | `--output`, `-o` | `Path` | stdout | Écrire le résultat dans un fichier local (création auto du dossier parent). | **Implemented** |
 | `--format`, `-f` | `markdown\|json\|plain` | `markdown` | Format de sortie. Si l’extension de `--output` contredit `--format`, un avertissement est affiché et l’extension du fichier est prioritaire. | **Implemented** |
-| `--structure` / `--no-structure` | `bool` | `False` | Ajouter la structure IA | **Planned v1.x** |
+| `--structure` / `--no-structure` | `bool` | `False` | Activer l’analyse de structure (`h1/h2/h3`) ; remplit `structure` en JSON et insère une TOC en tête de la sortie markdown. | **Implemented** |
 | `--max-tokens` | `int` | — | Tronquer le champ `markdown` à ~N tokens (heuristique ; voir `utils/plain_text`) | **Implemented** |
 | `--version` | | | Afficher la version et quitter | **Planned v1.x** |
 
@@ -100,6 +100,9 @@ ai-context-cli https://example.com/article --format markdown --output ./output/r
 
 # JSON machine-readable (schéma basé sur ProcessedContent)
 ai-context-cli https://example.com --format json | jq '.meta.estimated_tokens'
+
+# Structure IA + TOC markdown en tête du document
+ai-context-cli https://example.com/article --structure
 
 # Fichier local + limite de tokens (approximatif)
 ai-context-cli ./src/module.py --max-tokens 4000
@@ -228,7 +231,7 @@ from collections.abc import Callable
 class ProcessSourceCommand:
     source: str
     include_summary: bool = False
-    include_structure: bool = False  # Planned — pas encore dans le CLI
+    include_structure: bool = False
     max_tokens: int | None = None
     verbose: bool = False  # utilisé pour journaliser la troncature
 
@@ -289,6 +292,7 @@ def main(
     source: str = typer.Argument(..., help="URL HTTP(S) ou chemin local"),
     summary: bool = typer.Option(False, "--summary/--no-summary"),
     model: str | None = typer.Option(None, "--model"),
+    structure: bool = typer.Option(False, "--structure/--no-structure"),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
     max_tokens: int | None = typer.Option(None, "--max-tokens", min=1),
 ) -> None: ...
@@ -297,7 +301,7 @@ def run_app() -> None:
     typer.run(main)  # script d’entrée paquet : ai_context_cli.interfaces.cli:run_app
 ```
 
-Les options `--output`, `--format` et `--max-tokens` sont **Implemented** (voir tableau §5). `--structure` / `--version` restent **Planned v1.x**.
+Les options `--output`, `--format`, `--max-tokens` et `--structure` sont **Implemented** (voir tableau §5). `--version` reste **Planned v1.x**.
 
 ---
 

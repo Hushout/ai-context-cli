@@ -29,7 +29,10 @@ from ai_context_cli.infrastructure.formatters import (
     PlainFormatter,
 )
 from ai_context_cli.infrastructure.io import FileWriter
-from ai_context_cli.infrastructure.processors.markdown_converter import html_fragment_to_markdown
+from ai_context_cli.infrastructure.processors import (
+    analyze_markdown_structure,
+    html_fragment_to_markdown,
+)
 
 _err = Console(stderr=True, highlight=False)
 
@@ -113,6 +116,13 @@ def main(
             ),
         ),
     ] = None,
+    structure: Annotated[
+        bool,
+        typer.Option(
+            "--structure/--no-structure",
+            help="Attach heading hierarchy and include a TOC in markdown output.",
+        ),
+    ] = False,
     verbose: Annotated[
         bool,
         typer.Option("--verbose", "-v", help="Log pipeline steps to stderr."),
@@ -169,10 +179,12 @@ def main(
         extractor=ReadabilityExtractor(),
         html_to_markdown=html_fragment_to_markdown,
         summarizer=summarizer,
+        markdown_structure_analyzer=analyze_markdown_structure,
     )
     command = ProcessSourceCommand(
         source=normalized,
         include_summary=summary,
+        include_structure=structure,
         max_tokens=max_tokens,
         verbose=verbose,
     )
